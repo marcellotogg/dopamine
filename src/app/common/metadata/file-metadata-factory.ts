@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
-import { FileFormats } from '../application/file-formats';
-import { BaseFileSystem } from '../io/base-file-system';
-import { BaseFileMetadataFactory } from './base-file-metadata-factory';
-import { IFileMetadata } from './i-file-metadata';
-import { MusicMetadataFileMetadata } from './music-metadata-file-meta-data';
-import { TagLibFileMetadata } from './tag-lib-file-metadata';
+import { Injectable } from "@angular/core";
+import { FileFormats } from "../application/file-formats";
+import { BaseFileSystem } from "../io/base-file-system";
+import { BaseFileMetadataFactory } from "./base-file-metadata-factory";
+import { IFileMetadata } from "./i-file-metadata";
+import { MusicMetadataFileMetadata } from "./music-metadata-file-meta-data";
+import { TagLibFileMetadata } from "./tag-lib-file-metadata";
 
 @Injectable()
 export class FileMetadataFactory implements BaseFileMetadataFactory {
@@ -26,7 +26,7 @@ export class FileMetadataFactory implements BaseFileMetadataFactory {
                 fileMetadata = new TagLibFileMetadata(path);
                 break;
             case FileFormats.m4a:
-                fileMetadata = new MusicMetadataFileMetadata(path);
+                fileMetadata = new TagLibFileMetadata(path);
                 break;
             case FileFormats.opus:
                 fileMetadata = new MusicMetadataFileMetadata(path);

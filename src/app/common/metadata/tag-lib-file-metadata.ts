@@ -1,12 +1,19 @@
-import { File, Id3v2FrameClassType, Id3v2FrameIdentifiers, Id3v2PopularimeterFrame, Id3v2Tag, TagTypes } from 'node-taglib-sharp';
-import { IFileMetadata } from './i-file-metadata';
-import { RatingConverter } from './rating-converter';
+import {
+    File,
+    Id3v2FrameClassType,
+    Id3v2FrameIdentifiers,
+    Id3v2PopularimeterFrame,
+    Id3v2Tag,
+    TagTypes,
+} from "../../../dependencies/node-taglib-sharp";
+import { IFileMetadata } from "./i-file-metadata";
+import { RatingConverter } from "./rating-converter";
 
 export class TagLibFileMetadata implements IFileMetadata {
     private _rating: number = 0;
     private ratingHasChanged: boolean = false;
 
-    private windowsPopMUser: string = 'Windows Media Player 9 Series';
+    private windowsPopMUser: string = "Windows Media Player 9 Series";
 
     public constructor(public path: string) {}
 
@@ -110,7 +117,7 @@ export class TagLibFileMetadata implements IFileMetadata {
                 for (const picture of tagLibFile.tag.pictures) {
                     if (!couldGetPicture) {
                         try {
-                            this.picture = Buffer.from(picture.data.toBase64String(), 'base64');
+                            this.picture = Buffer.from(picture.data.toBase64String(), "base64");
                             couldGetPicture = true;
                         } catch (error) {
                             // Intended suppression
