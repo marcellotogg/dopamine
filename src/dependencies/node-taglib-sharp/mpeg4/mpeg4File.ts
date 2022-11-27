@@ -1,8 +1,8 @@
-import { NumberUtils } from "src/utils";
 import { File, FileAccessMode, ReadStyle } from "../file";
 import { IFileAbstraction } from "../fileAbstraction";
 import { Properties } from "../properties";
 import { Tag, TagTypes } from "../tag";
+import { NumberUtils } from "../utils";
 import AppleTag from "./appleTag";
 import { IsoAudioSampleEntry, IsoMovieHeaderBox, IsoUserDataBox, IsoVisualSampleEntry } from "./mpeg4Boxes";
 import Mpeg4BoxType from "./mpeg4BoxType";
