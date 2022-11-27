@@ -26,7 +26,7 @@ export class FileMetadataFactory implements BaseFileMetadataFactory {
                 fileMetadata = new TagLibFileMetadata(path);
                 break;
             case FileFormats.m4a:
-                fileMetadata = new MusicMetadataFileMetadata(path);
+                fileMetadata = new TagLibFileMetadata(path);
                 break;
             case FileFormats.opus:
                 fileMetadata = new MusicMetadataFileMetadata(path);
