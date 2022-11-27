@@ -692,7 +692,7 @@ export default class AppleTag extends Tag {
      * Gets and sets the ReplayGain Peak Value of the media represented by the current instance.
      */
     public get replayGainTrackPeak(): number {
-        let text: string = this.getDashBox("com.apple.iTunes", "REPLAYGAIN_TRACK_PEAK");
+        const text: string = this.getDashBox("com.apple.iTunes", "REPLAYGAIN_TRACK_PEAK");
 
         if (text === null || text === undefined) {
             return NaN;
@@ -742,7 +742,7 @@ export default class AppleTag extends Tag {
      * Gets and sets the ReplayGain Album Peak Value of the media represented by the current instance.
      */
     public get replayGainAlbumPeak(): number {
-        let text: string = this.getDashBox("com.apple.iTunes", "REPLAYGAIN_ALBUM_PEAK");
+        const text: string = this.getDashBox("com.apple.iTunes", "REPLAYGAIN_ALBUM_PEAK");
 
         if (text === null || text === undefined) {
             return NaN;

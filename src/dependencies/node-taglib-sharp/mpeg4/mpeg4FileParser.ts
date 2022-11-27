@@ -5,6 +5,7 @@ import { IsoAudioSampleEntry, IsoHandlerBox, IsoMovieHeaderBox, IsoUserDataBox, 
 import Mpeg4BoxFactory from "./mpeg4BoxFactory";
 import Mpeg4BoxHeader from "./mpeg4BoxHeader";
 import Mpeg4BoxType from "./mpeg4BoxType";
+import Mpeg4Utils from "./mpeg4Utils";
 
 /**
  * This class provides methods for reading important information from an MPEG-4 file.
@@ -237,7 +238,7 @@ export default class Mpeg4FileParser {
             header = Mpeg4BoxHeader.fromFileAndPosition(this._file, position);
 
             if ((this._moov_tree === null || this._moov_tree === undefined) && header.boxType === Mpeg4BoxType.Moov) {
-                const new_parents: Mpeg4BoxHeader[] = Mpeg4FileParser.addParent(parents, header);
+                const new_parents: Mpeg4BoxHeader[] = Mpeg4Utils.addParent(parents, header);
                 this._moov_tree = new_parents;
                 this.parseBoxHeadersFromStartEndAndParents(header.headerSize + position, header.totalBoxSize + position, new_parents);
             } else if (
@@ -249,13 +250,13 @@ export default class Mpeg4FileParser {
                 this.parseBoxHeadersFromStartEndAndParents(
                     header.headerSize + position,
                     header.totalBoxSize + position,
-                    Mpeg4FileParser.addParent(parents, header)
+                    Mpeg4Utils.addParent(parents, header)
                 );
             } else if ((this._udta_tree === null || this._udta_tree === undefined) && header.boxType === Mpeg4BoxType.Udta) {
                 // For compatibility, we still store the tree to the first udta
                 // block. The proper way to get this info is from the individual
                 // IsoUserDataBox.ParentTree member.
-                this._udta_tree = Mpeg4FileParser.addParent(parents, header);
+                this._udta_tree = Mpeg4Utils.addParent(parents, header);
             } else if (header.boxType === Mpeg4BoxType.Mdat) {
                 this._mdat_start = position;
                 this._mdat_end = position + header.totalBoxSize;
@@ -283,7 +284,7 @@ export default class Mpeg4FileParser {
                 this.parseTagFromStartEndAndParents(
                     header.headerSize + position,
                     header.totalBoxSize + position,
-                    Mpeg4FileParser.addParent(parents, header)
+                    Mpeg4Utils.addParent(parents, header)
                 );
             } else if (
                 header.boxType === Mpeg4BoxType.Mdia ||
@@ -294,13 +295,13 @@ export default class Mpeg4FileParser {
                 this.parseTagFromStartEndAndParents(
                     header.headerSize + position,
                     header.totalBoxSize + position,
-                    Mpeg4FileParser.addParent(parents, header)
+                    Mpeg4Utils.addParent(parents, header)
                 );
             } else if (header.boxType === Mpeg4BoxType.Udta) {
                 const udtaBox = Mpeg4BoxFactory.createBoxFromFileAndHeader(this._file, header) as IsoUserDataBox;
 
                 // Since we can have multiple udta boxes, save the parent for each one
-                const new_parents: Mpeg4BoxHeader[] = Mpeg4FileParser.addParent(parents, header);
+                const new_parents: Mpeg4BoxHeader[] = Mpeg4Utils.addParent(parents, header);
                 udtaBox.parentTree = new_parents;
 
                 this._udta_boxes.push(udtaBox);
@@ -327,7 +328,7 @@ export default class Mpeg4FileParser {
         end: number,
         handler: IsoHandlerBox,
         parents: Mpeg4BoxHeader[]
-    ) {
+    ): void {
         let header: Mpeg4BoxHeader;
 
         for (let position = start; position < end; position += header.totalBoxSize) {
@@ -338,7 +339,7 @@ export default class Mpeg4FileParser {
                     header.headerSize + position,
                     header.totalBoxSize + position,
                     handler,
-                    Mpeg4FileParser.addParent(parents, header)
+                    Mpeg4Utils.addParent(parents, header)
                 );
             } else if (
                 header.boxType === Mpeg4BoxType.Mdia ||
@@ -350,7 +351,7 @@ export default class Mpeg4FileParser {
                     header.headerSize + position,
                     header.totalBoxSize + position,
                     handler,
-                    Mpeg4FileParser.addParent(parents, header)
+                    Mpeg4Utils.addParent(parents, header)
                 );
             } else if (header.boxType === Mpeg4BoxType.Stsd) {
                 this._stsd_boxes.push(Mpeg4BoxFactory.createBoxFromFileHeaderAndHandler(this._file, header, handler));
@@ -366,7 +367,7 @@ export default class Mpeg4FileParser {
                 ) as IsoUserDataBox;
 
                 // Since we can have multiple udta boxes, save the parent for each one
-                const new_parents: Mpeg4BoxHeader[] = Mpeg4FileParser.addParent(parents, header);
+                const new_parents: Mpeg4BoxHeader[] = Mpeg4Utils.addParent(parents, header);
                 udtaBox.parentTree = new_parents;
 
                 this._udta_boxes.push(udtaBox);
@@ -427,24 +428,5 @@ export default class Mpeg4FileParser {
         this._stsd_boxes = [];
         this._mdat_start = -1;
         this._mdat_end = -1;
-    }
-
-    /**
-     * Adds a parent to the end of an existing list of parents.
-     * @param parents A @see Mpeg4BoxHeader[] object containing an existing list of parents.
-     * @param current A @see Mpeg4BoxHeader object to add to the list.
-     * @returns A @see Mpeg4BoxHeader[] object containing the list
-     * of parents, including the added header.
-     */
-    private static addParent(parents: Mpeg4BoxHeader[], current: Mpeg4BoxHeader): Mpeg4BoxHeader[] {
-        const boxes: Mpeg4BoxHeader[] = [];
-
-        if (parents !== null && parents !== undefined) {
-            boxes.push(...parents);
-        }
-
-        boxes.push(current);
-
-        return boxes;
     }
 }

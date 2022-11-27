@@ -66,7 +66,8 @@ export class Mpeg4Box {
     /**
      * Constructs and initializes a new instance of @see Mpeg4Box with a specified header and handler.
      * @param header A @see Mpeg4BoxHeader object describing the new instance.
-     * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance, or undefined if no handler applies.
+     * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance,
+     * or undefined if no handler applies.
      * @returns A new instance of @see Mpeg4Box with a specified header and handler.
      */
     public static fromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): Mpeg4Box {
@@ -806,7 +807,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
         let offset: number = 0;
 
         // Elementary Stream Descriptor Tag
-        if (<DescriptorTag>box_data.get(offset++) != DescriptorTag.ES_DescrTag) {
+        if (<DescriptorTag>box_data.get(offset++) !== DescriptorTag.ES_DescrTag) {
             throw new Error("Invalid Elementary Stream Descriptor, missing tag.");
         }
 
@@ -822,10 +823,17 @@ export class AppleElementaryStreamDescriptor extends FullBox {
         appleElementaryStreamDescriptor._streamId = box_data.subarray(offset, 2).toUshort();
         offset += 2; // Done with ES_ID
 
-        appleElementaryStreamDescriptor._stream_dependence_flag = <number>((box_data.get(offset) >> 7) & 0x1) == 0x1 ? true : false; // 1st bit
-        appleElementaryStreamDescriptor._URL_flag = <number>((box_data.get(offset) >> 6) & 0x1) == 0x1 ? true : false; // 2nd bit
-        appleElementaryStreamDescriptor._ocr_stream_flag = <number>((box_data.get(offset) >> 5) & 0x1) == 0x1 ? true : false; // 3rd bit
-        appleElementaryStreamDescriptor._streamPriority = <number>(box_data.get(offset++) & 0x1f); // Last 5 bits and we're done with this byte
+        // 1st bit
+        appleElementaryStreamDescriptor._stream_dependence_flag = <number>((box_data.get(offset) >> 7) & 0x1) === 0x1 ? true : false;
+
+        // 2nd bit
+        appleElementaryStreamDescriptor._URL_flag = <number>((box_data.get(offset) >> 6) & 0x1) === 0x1 ? true : false;
+
+        // 3rd bit
+        appleElementaryStreamDescriptor._ocr_stream_flag = <number>((box_data.get(offset) >> 5) & 0x1) === 0x1 ? true : false;
+
+        // Last 5 bits and we're done with this byte
+        appleElementaryStreamDescriptor._streamPriority = <number>(box_data.get(offset++) & 0x1f);
 
         if (appleElementaryStreamDescriptor._stream_dependence_flag) {
             min_es_length += 2; // We need 2 more bytes
@@ -876,7 +884,10 @@ export class AppleElementaryStreamDescriptor extends FullBox {
             switch (tag) {
                 case DescriptorTag.DecoderConfigDescrTag: // DecoderConfigDescriptor
                     {
-                        // Check that the remainder of the tag is at least 13 bytes long (13 + DecoderSpecificInfo[] + profileLevelIndicationIndexDescriptor[])
+                        /**
+                         * Check that the remainder of the tag is at least 13 bytes long
+                         * (13 + DecoderSpecificInfo[] + profileLevelIndicationIndexDescriptor[])
+                         */
                         if (appleElementaryStreamDescriptor.readLength(box_data, offset) < 13) {
                             throw new Error("Could not read data. Too small.");
                         }
@@ -884,8 +895,11 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                         // Read a lot of good info.
                         appleElementaryStreamDescriptor._objectTypeId = box_data.get(offset++);
 
-                        appleElementaryStreamDescriptor._streamType = <number>(box_data.get(offset) >> 2); // First 6 bits
-                        appleElementaryStreamDescriptor._upStream = ((box_data.get(offset++) >> 1) & 0x1) == 0x1 ? true : false; // 7th bit and we're done with the stream bits
+                        // First 6 bits
+                        appleElementaryStreamDescriptor._streamType = <number>(box_data.get(offset) >> 2);
+
+                        // 7th bit and we're done with the stream bits
+                        appleElementaryStreamDescriptor._upStream = ((box_data.get(offset++) >> 1) & 0x1) === 0x1 ? true : false;
 
                         appleElementaryStreamDescriptor._bufferSizeDB = box_data.subarray(offset, 3).toUint();
                         offset += 3; // Done with bufferSizeDB
@@ -931,7 +945,8 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                      * IP_IdentificationDataSet ipIDS[0 .. 1];
                      * QoS_Descriptor qosDescr[0 .. 1];
                      */
-                    const length: number = appleElementaryStreamDescriptor.readLength(box_data, offset); // Every descriptor starts with a length
+                    // Every descriptor starts with a length
+                    const length: number = appleElementaryStreamDescriptor.readLength(box_data, offset);
 
                     offset += length; // Skip the rest of the descriptor as reported in the length so we can move onto the next one
 
@@ -1929,6 +1944,11 @@ export class IsoSampleTableBox extends Mpeg4Box {
  */
 export class IsoUserDataBox extends Mpeg4Box {
     /**
+     *  Gets the box headers for the current "udta" box and all parent boxes up to the top of the file.
+     */
+    public parentTree: Mpeg4BoxHeader[];
+
+    /**
      * The children of the current instance.
      */
     private _internalChildren: Mpeg4Box[];
@@ -1975,11 +1995,6 @@ export class IsoUserDataBox extends Mpeg4Box {
     public get children(): Mpeg4Box[] {
         return this._internalChildren;
     }
-
-    /**
-     *  Gets the box headers for the current "udta" box and all parent boxes up to the top of the file.
-     */
-    public parentTree: Mpeg4BoxHeader[];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
