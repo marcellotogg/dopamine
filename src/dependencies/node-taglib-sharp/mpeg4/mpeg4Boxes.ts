@@ -59,7 +59,7 @@ export class Mpeg4Box {
     /**
      * The children of the current instance.
      */
-    private _children: Mpeg4Box[] = undefined;
+    public children: Mpeg4Box[] = [];
 
     protected constructor() {}
 
@@ -112,13 +112,6 @@ export class Mpeg4Box {
         return undefined;
     }
     public set data(v: ByteVector) {}
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._children;
-    }
 
     /**
      * Gets whether or not the current instance has children.
@@ -290,7 +283,7 @@ export class Mpeg4Box {
             return;
         }
 
-        this._children = [];
+        this.children = [];
     }
 
     /**
@@ -548,11 +541,6 @@ export class AppleAdditionalInfoBox extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of an Apple AnnotationBox.
  */
 export default class AppleAnnotationBox extends Mpeg4Box {
-    /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[];
-
     public constructor() {
         super();
     }
@@ -570,7 +558,7 @@ export default class AppleAnnotationBox extends Mpeg4Box {
 
         const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
         const appleAnnotationBox: AppleAnnotationBox = base as AppleAnnotationBox;
-        appleAnnotationBox._internalChildren = appleAnnotationBox.loadChildren(file);
+        appleAnnotationBox.children = appleAnnotationBox.loadChildren(file);
 
         return appleAnnotationBox;
     }
@@ -583,16 +571,9 @@ export default class AppleAnnotationBox extends Mpeg4Box {
     public static fromType(type: ByteVector): AppleAnnotationBox {
         const base: Mpeg4Box = Mpeg4Box.fromType(type);
         const appleAnnotationBox: AppleAnnotationBox = base as AppleAnnotationBox;
-        appleAnnotationBox._internalChildren = [];
+        appleAnnotationBox.children = [];
 
         return appleAnnotationBox;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 }
 
@@ -1030,11 +1011,6 @@ export class AppleElementaryStreamDescriptor extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of an Apple ItemListBox.
  */
 export class AppleItemListBox extends Mpeg4Box {
-    /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[] = undefined;
-
     public constructor() {
         super();
     }
@@ -1053,7 +1029,7 @@ export class AppleItemListBox extends Mpeg4Box {
         const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
         const appleItemListBox: AppleItemListBox = base as AppleItemListBox;
 
-        appleItemListBox._internalChildren = appleItemListBox.loadChildren(file);
+        appleItemListBox.children = appleItemListBox.loadChildren(file);
 
         return appleItemListBox;
     }
@@ -1066,16 +1042,9 @@ export class AppleItemListBox extends Mpeg4Box {
         const base: Mpeg4Box = Mpeg4Box.fromType(ByteVector.fromString("ilst", StringType.UTF8));
         const appleItemListBox: AppleItemListBox = base as AppleItemListBox;
 
-        appleItemListBox._internalChildren = [];
+        appleItemListBox.children = [];
 
         return appleItemListBox;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 }
 
@@ -1150,11 +1119,6 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
      */
     private _sample_rate: number;
 
-    /**
-     * Contains the children of the box.
-     */
-    private _internalChildren: Mpeg4Box[];
-
     public constructor() {
         super();
     }
@@ -1178,7 +1142,7 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
         isoAudioSampleEntry._sample_size = file.readBlock(2).toUshort();
         file.seek(base.dataPosition + 16);
         isoAudioSampleEntry._sample_rate = file.readBlock(4).toUint();
-        isoAudioSampleEntry._internalChildren = isoAudioSampleEntry.loadChildren(file);
+        isoAudioSampleEntry.children = isoAudioSampleEntry.loadChildren(file);
 
         return isoAudioSampleEntry;
     }
@@ -1188,13 +1152,6 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
      */
     public get dataPosition(): number {
         return super.dataPosition + 20;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 
     /**
@@ -1609,11 +1566,6 @@ export class IsoHandlerBox extends FullBox {
  */
 export class IsoMetaBox extends FullBox {
     /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[];
-
-    /**
      * Constructs and initializes a new instance of @see IsoMetaBox with a provided header and
      * handler by reading the contents from a specified file.
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
@@ -1624,7 +1576,7 @@ export class IsoMetaBox extends FullBox {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoMetaBox {
         const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
         const isoMetaBox: IsoMetaBox = base as IsoMetaBox;
-        isoMetaBox._internalChildren = isoMetaBox.loadChildren(file);
+        isoMetaBox.children = isoMetaBox.loadChildren(file);
 
         return isoMetaBox;
     }
@@ -1645,17 +1597,10 @@ export class IsoMetaBox extends FullBox {
         const base: FullBox = FullBox.fromTypeVersionAndFlags(ByteVector.fromString("meta", StringType.UTF8), 0, 0);
         const isoMetaBox: IsoMetaBox = base as IsoMetaBox;
 
-        isoMetaBox._internalChildren = [];
+        isoMetaBox.children = [];
         isoMetaBox.addChild(IsoHandlerBox.fromHandlerTypeAndHandlerName(handlerType, handlerName));
 
         return isoMetaBox;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 }
 
@@ -1832,11 +1777,6 @@ export class IsoSampleDescriptionBox extends FullBox {
      */
     private _entryCount: number;
 
-    /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[];
-
     public constructor() {
         super();
     }
@@ -1856,7 +1796,7 @@ export class IsoSampleDescriptionBox extends FullBox {
         const isoSampleDescriptionBox: IsoSampleDescriptionBox = base as IsoSampleDescriptionBox;
 
         isoSampleDescriptionBox._entryCount = file.readBlock(4).toUint();
-        isoSampleDescriptionBox._internalChildren = isoSampleDescriptionBox.loadChildren(file);
+        isoSampleDescriptionBox.children = isoSampleDescriptionBox.loadChildren(file);
 
         return isoSampleDescriptionBox;
     }
@@ -1875,13 +1815,6 @@ export class IsoSampleDescriptionBox extends FullBox {
     public get entryCount(): number {
         return this._entryCount;
     }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1890,11 +1823,6 @@ export class IsoSampleDescriptionBox extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of a ISO/IEC 14496-12 SampleTableBox.
  */
 export class IsoSampleTableBox extends Mpeg4Box {
-    /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[];
-
     public constructor() {
         super();
     }
@@ -1913,16 +1841,9 @@ export class IsoSampleTableBox extends Mpeg4Box {
         const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
         const isoSampleTableBox: IsoSampleTableBox = base as IsoSampleTableBox;
 
-        isoSampleTableBox._internalChildren = isoSampleTableBox.loadChildren(file);
+        isoSampleTableBox.children = isoSampleTableBox.loadChildren(file);
 
         return isoSampleTableBox;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 }
 
@@ -1936,11 +1857,6 @@ export class IsoUserDataBox extends Mpeg4Box {
      *  Gets the box headers for the current "udta" box and all parent boxes up to the top of the file.
      */
     public parentTree: Mpeg4BoxHeader[];
-
-    /**
-     * The children of the current instance.
-     */
-    private _internalChildren: Mpeg4Box[];
 
     public constructor() {
         super();
@@ -1960,7 +1876,7 @@ export class IsoUserDataBox extends Mpeg4Box {
         const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
         const isoUserDataBox: IsoUserDataBox = base as IsoUserDataBox;
 
-        isoUserDataBox._internalChildren = isoUserDataBox.loadChildren(file);
+        isoUserDataBox.children = isoUserDataBox.loadChildren(file);
 
         return isoUserDataBox;
     }
@@ -1973,16 +1889,9 @@ export class IsoUserDataBox extends Mpeg4Box {
         const base: Mpeg4Box = Mpeg4Box.fromType(ByteVector.fromString("udta", StringType.UTF8));
         const isoUserDataBox: IsoUserDataBox = base as IsoUserDataBox;
 
-        isoUserDataBox._internalChildren = [];
+        isoUserDataBox.children = [];
 
         return isoUserDataBox;
-    }
-
-    /**
-     * Gets the children of the current instance.
-     */
-    public get children(): Mpeg4Box[] {
-        return this._internalChildren;
     }
 }
 
