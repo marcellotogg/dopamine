@@ -61,40 +61,34 @@ export class Mpeg4Box {
      */
     private _children: Mpeg4Box[] = undefined;
 
-    public constructor() {}
+    protected constructor() {}
 
     /**
-     * Constructs and initializes a new instance of @see Mpeg4Box with a specified header and handler.
+     * Initializes a new instance of @see Mpeg4Box with a specified header and handler.
      * @param header A @see Mpeg4BoxHeader object describing the new instance.
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance,
      * or undefined if no handler applies.
-     * @returns A new instance of @see Mpeg4Box with a specified header and handler.
      */
-    public static fromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): Mpeg4Box {
-        const box: Mpeg4Box = new Mpeg4Box();
-        box._header = header;
-        box._dataPosition = header.position + header.headerSize;
-        box._handler = handler;
-
-        return box;
+    public initializeFromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): void {
+        this._header = header;
+        this._dataPosition = header.position + header.headerSize;
+        this._handler = handler;
     }
 
     /**
-     * Constructs and initializes a new instance of @see Mpeg4Box with a specified header.
+     * Initializes a new instance of @see Mpeg4Box with a specified header.
      * @param header A @see Mpeg4BoxHeader object describing the new instance.
-     * @returns A new instance of @see Mpeg4Box with a specified header.
      */
-    public static fromHeader(header: Mpeg4BoxHeader): Mpeg4Box {
-        return Mpeg4Box.fromHeaderAndHandler(header, undefined);
+    public initializeFromHeader(header: Mpeg4BoxHeader): void {
+        return this.initializeFromHeaderAndHandler(header, undefined);
     }
 
     /**
-     * Constructs and initializes a new instance of @see Mpeg4Box with a specified box type.
+     * Initializes a new instance of @see Mpeg4Box with a specified box type.
      * @param type A @see ByteVector object containing the box type to use for the new instance.
-     * @returns A new instance of @see Mpeg4Box with a specified box type.
      */
-    public static fromType(type: ByteVector): Mpeg4Box {
-        return Mpeg4Box.fromHeader(Mpeg4BoxHeader.fromType(type));
+    public initializeFromType(type: ByteVector): void {
+        return this.initializeFromHeader(Mpeg4BoxHeader.fromType(type));
     }
 
     /**
