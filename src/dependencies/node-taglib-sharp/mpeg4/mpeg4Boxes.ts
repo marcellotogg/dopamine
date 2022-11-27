@@ -69,7 +69,7 @@ export class Mpeg4Box {
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance,
      * or undefined if no handler applies.
      */
-    public initializeFromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): void {
+    protected initializeFromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): void {
         this._header = header;
         this._dataPosition = header.position + header.headerSize;
         this._handler = handler;
@@ -79,7 +79,7 @@ export class Mpeg4Box {
      * Initializes a new instance of @see Mpeg4Box with a specified header.
      * @param header A @see Mpeg4BoxHeader object describing the new instance.
      */
-    public initializeFromHeader(header: Mpeg4BoxHeader): void {
+    protected initializeFromHeader(header: Mpeg4BoxHeader): void {
         return this.initializeFromHeaderAndHandler(header, undefined);
     }
 
@@ -87,7 +87,7 @@ export class Mpeg4Box {
      * Initializes a new instance of @see Mpeg4Box with a specified box type.
      * @param type A @see ByteVector object containing the box type to use for the new instance.
      */
-    public initializeFromType(type: ByteVector): void {
+    protected initializeFromType(type: ByteVector): void {
         return this.initializeFromHeader(Mpeg4BoxHeader.fromType(type));
     }
 
@@ -412,55 +412,50 @@ export class FullBox extends Mpeg4Box {
      */
     public flags: number;
 
+    protected constructor() {
+        super();
+    }
+
     /**
-     * Constructs and initializes a new instance of @see FullBox with a provided header and handler
+     * Initializes a new instance of @see FullBox with a provided header and handler
      * by reading the contents from a specified file.
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
      * @param file A @see File object to read the contents of the box from.
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
-     * @returns A new instance of @see FullBox.
      */
-    protected static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): FullBox {
+    protected initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
+        this.initializeFromHeaderAndHandler(header, handler);
 
-        file.seek(base.dataPosition);
+        file.seek(super.dataPosition);
         const headerData: ByteVector = file.readBlock(4);
 
-        const fullBox: FullBox = base as FullBox;
-        fullBox.version = headerData.get(0);
-        fullBox.flags = headerData.subarray(1, 3).toUint();
-
-        return fullBox;
+        this.version = headerData.get(0);
+        this.flags = headerData.subarray(1, 3).toUint();
     }
 
     /**
-     * Constructs and initializes a new instance of @see FullBox with a provided header, version, and flags.
+     * Initializes a new instance of @see FullBox with a provided header, version, and flags.
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
      * @param version A value containing the version of the new instance.
-     * @param flags A value containing the flags for the new instance.
-     * @returns A new instance of @see FullBox.
      */
-    protected static fromHeaderVersionAndFlags(header: Mpeg4BoxHeader, version: number, flags: number): FullBox {
-        const base: Mpeg4Box = Mpeg4Box.fromHeader(header);
+    protected initializeFromHeaderVersionAndFlags(header: Mpeg4BoxHeader, version: number, flags: number): void {
+        this.initializeFromHeader(header);
 
-        const fullBox: FullBox = base as FullBox;
-        fullBox.version = version;
-        fullBox.flags = flags;
-
-        return fullBox;
+        this.version = version;
+        this.flags = flags;
     }
 
     /**
-     * Constructs and initializes a new instance of @see FullBox with a provided header, version, and flags.
+     * Initializes a new instance of @see FullBox with a provided header, version, and flags.
      * @param type A @see ByteVector object containing the four byte box type.
      * @param version A value containing the version of the new instance.
      * @param flags A value containing the flags for the new instance.
      * @returns A new instance of @see FullBox.
      */
-    protected static fromTypeVersionAndFlags(type: ByteVector, version: number, flags: number): FullBox {
-        return this.fromHeaderVersionAndFlags(Mpeg4BoxHeader.fromType(type), version, flags);
+    protected initializeFromTypeVersionAndFlags(type: ByteVector, version: number, flags: number): void {
+        return this.initializeFromHeaderVersionAndFlags(Mpeg4BoxHeader.fromType(type), version, flags);
     }
 
     /**
