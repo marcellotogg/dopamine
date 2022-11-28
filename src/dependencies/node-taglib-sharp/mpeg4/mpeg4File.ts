@@ -71,7 +71,7 @@ export default class Mpeg4File extends File {
 
             // Ensure our collection contains at least a single empty box
             if (this._udtaBoxes.length === 0) {
-                const dummy = new IsoUserDataBox();
+                const dummy = IsoUserDataBox.fromEmpty();
                 this._udtaBoxes.push(dummy);
             }
 
@@ -84,7 +84,7 @@ export default class Mpeg4File extends File {
             // Find the udta box with the Apple Tag ILST
             let udtaBox: IsoUserDataBox = this.findAppleTagUdta();
             if (udtaBox === null || udtaBox === undefined) {
-                udtaBox = new IsoUserDataBox();
+                udtaBox = IsoUserDataBox.fromEmpty();
             }
 
             this._apple_tag = new AppleTag(udtaBox);
