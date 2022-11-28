@@ -170,7 +170,7 @@ export class Mpeg4Box {
         }
 
         for (const box of this.children) {
-            if (box.boxType === type) {
+            if (ByteVector.compare(box.boxType, type) === 0) {
                 return box;
             }
         }
@@ -191,7 +191,7 @@ export class Mpeg4Box {
         const boxes: Mpeg4Box[] = [];
 
         for (const box of this.children) {
-            if (box.boxType === type) {
+            if (ByteVector.compare(box.boxType, type) === 0) {
                 boxes.push(box);
             }
         }
@@ -214,7 +214,7 @@ export class Mpeg4Box {
         }
 
         for (const box of this.children) {
-            if (box.boxType === type) {
+            if (ByteVector.compare(box.boxType, type) === 0) {
                 return box;
             }
         }
@@ -240,7 +240,7 @@ export class Mpeg4Box {
         }
 
         for (const box of this.children) {
-            if (box.boxType === type) {
+            if (ByteVector.compare(box.boxType, type) === 0) {
                 const index = this.children.indexOf(box);
 
                 if (index > -1) {
