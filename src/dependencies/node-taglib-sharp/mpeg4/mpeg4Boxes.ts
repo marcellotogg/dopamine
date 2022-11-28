@@ -482,11 +482,6 @@ export class FullBox extends Mpeg4Box {
  */
 export class AppleAdditionalInfoBox extends FullBox {
     /**
-     * Contains the box data.
-     */
-    private _data: ByteVector;
-
-    /**
      * Private constructor to force construction via static functions.
      */
     private constructor() {
@@ -524,23 +519,13 @@ export class AppleAdditionalInfoBox extends FullBox {
     }
 
     /**
-     * Gets and sets the data contained in the current instance.
-     */
-    public get data(): ByteVector {
-        return this._data;
-    }
-    public set data(v: ByteVector) {
-        this._data = v ?? ByteVector.empty();
-    }
-
-    /**
      * Gets and sets the text contained in the current instance.
      */
     public get text(): string {
-        return StringUtils.trimStart(this._data.toString(StringType.Latin1), "\0");
+        return StringUtils.trimStart(this.data.toString(StringType.Latin1), "\0");
     }
     public set text(v: string) {
-        this._data = ByteVector.fromString(v, StringType.Latin1);
+        this.data = ByteVector.fromString(v, StringType.Latin1);
     }
 }
 
@@ -596,11 +581,6 @@ export default class AppleAnnotationBox extends Mpeg4Box {
  */
 export class AppleDataBox extends FullBox {
     /**
-     * Contains the box data.
-     */
-    private _data: ByteVector;
-
-    /**
      * Private constructor to force construction via static functions.
      */
     private constructor() {
@@ -646,16 +626,6 @@ export class AppleDataBox extends FullBox {
     }
 
     /**
-     * Gets and sets the data contained in the current instance.
-     */
-    public get data(): ByteVector {
-        return this._data;
-    }
-    public set data(v: ByteVector) {
-        this._data = v ?? ByteVector.empty();
-    }
-
-    /**
      * Gets and sets the text contained in the current instance.
      */
     public get text(): string {
@@ -690,82 +660,82 @@ export class AppleElementaryStreamDescriptor extends FullBox {
     /**
      * The ES_ID of another elementary stream on which this elementary stream depends
      */
-    private _dependsOn_ES_ID: number;
+    public dependsOnEsId: number;
 
     /**
      * Indicates that a dependsOn_ES_ID will follow
      */
-    private _stream_dependence_flag: boolean;
+    public streamDependenceFlag: boolean;
 
     /**
      * OCR Stream Flag
      */
-    private _ocr_stream_flag: boolean;
+    public ocrStreamFlag: boolean;
 
     /**
      * OCR ES_ID
      */
-    private _OCR_ES_Id: number;
+    public ocrEsId: number;
 
     /**
      * Indicates that a URLstring will follow
      */
-    private _URL_flag: boolean;
+    public urlFlag: boolean;
 
     /**
      * Length of URL String
      */
-    private _URLlength: number;
+    public urlLength: number;
 
     /**
      * URL String of URLlength, contains a URL that shall point to the location of an SL-packetized stream by name.
      */
-    private _URLstring: string;
+    public urlString: string;
 
     /**
      * Indicates that this stream is used for upstream information
      */
-    private _upStream: boolean;
+    public upStream: boolean;
 
     /**
-     * Contains the maximum bitrate.
+     *  The maximum bitrate the stream described by the current instance.
      */
-    private _max_bitrate: number;
+     public maximumBitrate: number;
 
-    /**
-     * Contains the average bitrate.
-     */
-    private _average_bitrate: number;
+     /**
+      * The maximum average the stream described by the current instance.
+      */
+     public averageBitrate: number;
 
     /**
      * The ID of the stream described by the current instance.
      */
-    private _streamId: number;
+    public streamId: number;
 
     /**
      * The priority of the stream described by the current instance.
      */
-    private _streamPriority: number;
+    public streamPriority: number;
 
     /**
      * The object type ID of the stream described by the current instance.
      */
-    private _objectTypeId: number;
+    public objectTypeId: number;
 
     /**
      * The type the stream described by the current instance.
      */
-    private _streamType: number;
+    public streamType: number;
 
     /**
      * The buffer size DB value the stream described by the current instance.
      */
-    private _bufferSizeDB: number;
+    public bufferSizeDB: number;
 
     /**
      * The decoder config data of stream described by the current instance.
      */
-    private _decoderConfig: ByteVector;
+    public decoderConfig: ByteVector;
 
     /**
      * Private constructor to force construction via static functions.
@@ -787,87 +757,86 @@ export class AppleElementaryStreamDescriptor extends FullBox {
          *  Section 7.2.6.5 http://ecee.colorado.edu/~ecen5653/ecen5653/papers/ISO%2014496-1%202004.PDF
          */
 
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const appleElementaryStreamDescriptor: AppleElementaryStreamDescriptor = base as AppleElementaryStreamDescriptor;
-
-        const box_data: ByteVector = file.readBlock(appleElementaryStreamDescriptor.dataSize);
-        appleElementaryStreamDescriptor._decoderConfig = ByteVector.empty();
+        const instance: AppleElementaryStreamDescriptor = new AppleElementaryStreamDescriptor();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        const boxData: ByteVector = file.readBlock(instance.dataSize);
+        instance.decoderConfig = ByteVector.empty();
         let offset: number = 0;
 
         // Elementary Stream Descriptor Tag
-        if (<DescriptorTag>box_data.get(offset++) !== DescriptorTag.ES_DescrTag) {
+        if (<DescriptorTag>boxData.get(offset++) !== DescriptorTag.ES_DescrTag) {
             throw new Error("Invalid Elementary Stream Descriptor, missing tag.");
         }
 
         // We have a descriptor tag. Check that the remainder of the tag is at least
         // [Base (3 bytes) + DecoderConfigDescriptor (15 bytes) + SLConfigDescriptor (3 bytes) + OtherDescriptors] bytes long
-        const es_length: number = appleElementaryStreamDescriptor.readLength(box_data, offset);
-        let min_es_length: number = 3 + 15 + 3; // Base minimum length
+        const esLength: number = instance.readLength(boxData, offset);
+        let minEsLength: number = 3 + 15 + 3; // Base minimum length
 
-        if (es_length < min_es_length) {
+        if (esLength < minEsLength) {
             throw new Error("Insufficient data present.");
         }
 
-        appleElementaryStreamDescriptor._streamId = box_data.subarray(offset, 2).toUshort();
+        instance.streamId = boxData.subarray(offset, 2).toUshort();
         offset += 2; // Done with ES_ID
 
         // 1st bit
-        appleElementaryStreamDescriptor._stream_dependence_flag = <number>((box_data.get(offset) >> 7) & 0x1) === 0x1 ? true : false;
+        instance.streamDependenceFlag = <number>((boxData.get(offset) >> 7) & 0x1) === 0x1 ? true : false;
 
         // 2nd bit
-        appleElementaryStreamDescriptor._URL_flag = <number>((box_data.get(offset) >> 6) & 0x1) === 0x1 ? true : false;
+        instance.urlFlag = <number>((boxData.get(offset) >> 6) & 0x1) === 0x1 ? true : false;
 
         // 3rd bit
-        appleElementaryStreamDescriptor._ocr_stream_flag = <number>((box_data.get(offset) >> 5) & 0x1) === 0x1 ? true : false;
+        instance.ocrStreamFlag = <number>((boxData.get(offset) >> 5) & 0x1) === 0x1 ? true : false;
 
         // Last 5 bits and we're done with this byte
-        appleElementaryStreamDescriptor._streamPriority = <number>(box_data.get(offset++) & 0x1f);
+        instance.streamPriority = <number>(boxData.get(offset++) & 0x1f);
 
-        if (appleElementaryStreamDescriptor._stream_dependence_flag) {
-            min_es_length += 2; // We need 2 more bytes
+        if (instance.streamDependenceFlag) {
+            minEsLength += 2; // We need 2 more bytes
 
-            if (es_length < min_es_length) {
+            if (esLength < minEsLength) {
                 throw new Error("Insufficient data present.");
             }
 
-            appleElementaryStreamDescriptor._dependsOn_ES_ID = box_data.subarray(offset, 2).toUshort();
+            instance.dependsOnEsId = boxData.subarray(offset, 2).toUshort();
             offset += 2; // Done with stream dependence
         }
 
-        if (appleElementaryStreamDescriptor._URL_flag) {
-            min_es_length += 2; // We need 1 more byte
+        if (instance.urlFlag) {
+            minEsLength += 2; // We need 1 more byte
 
-            if (es_length < min_es_length) {
+            if (esLength < minEsLength) {
                 throw new Error("Insufficient data present.");
             }
 
-            appleElementaryStreamDescriptor._URLlength = box_data.get(offset++); // URL Length
-            min_es_length += appleElementaryStreamDescriptor._URLlength; // We need URLength more bytes
+            instance.urlLength = boxData.get(offset++); // URL Length
+            minEsLength += instance.urlLength; // We need URLength more bytes
 
-            if (es_length < min_es_length) {
+            if (esLength < minEsLength) {
                 throw new Error("Insufficient data present.");
             }
 
-            appleElementaryStreamDescriptor._URLstring = box_data
-                .subarray(offset, appleElementaryStreamDescriptor._URLlength)
+            instance.urlString = boxData
+                .subarray(offset, instance.urlLength)
                 .toString(StringType.UTF8); // URL name
-            offset += appleElementaryStreamDescriptor._URLlength; // Done with URL name
+            offset += instance.urlLength; // Done with URL name
         }
 
-        if (appleElementaryStreamDescriptor._ocr_stream_flag) {
-            min_es_length += 2; // We need 2 more bytes
+        if (instance.ocrStreamFlag) {
+            minEsLength += 2; // We need 2 more bytes
 
-            if (es_length < min_es_length) {
+            if (esLength < minEsLength) {
                 throw new Error("Insufficient data present.");
             }
 
-            appleElementaryStreamDescriptor._OCR_ES_Id = box_data.subarray(offset, 2).toUshort();
+            instance.ocrEsId = boxData.subarray(offset, 2).toUshort();
             offset += 2; // Done with OCR
         }
 
         // Loop through all trailing Descriptors Tags
-        while (offset < appleElementaryStreamDescriptor.dataSize) {
-            const tag: DescriptorTag = <DescriptorTag>box_data.get(offset++);
+        while (offset < instance.dataSize) {
+            const tag: DescriptorTag = <DescriptorTag>boxData.get(offset++);
 
             switch (tag) {
                 case DescriptorTag.DecoderConfigDescrTag: // DecoderConfigDescriptor
@@ -876,26 +845,28 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                          * Check that the remainder of the tag is at least 13 bytes long
                          * (13 + DecoderSpecificInfo[] + profileLevelIndicationIndexDescriptor[])
                          */
-                        if (appleElementaryStreamDescriptor.readLength(box_data, offset) < 13) {
+                        if (instance.readLength(boxData, offset) < 13) {
                             throw new Error("Could not read data. Too small.");
                         }
 
                         // Read a lot of good info.
-                        appleElementaryStreamDescriptor._objectTypeId = box_data.get(offset++);
+                        instance.objectTypeId = boxData.get(offset++);
 
                         // First 6 bits
-                        appleElementaryStreamDescriptor._streamType = <number>(box_data.get(offset) >> 2);
+                        instance.streamType = <number>(boxData.get(offset) >> 2);
 
                         // 7th bit and we're done with the stream bits
-                        appleElementaryStreamDescriptor._upStream = ((box_data.get(offset++) >> 1) & 0x1) === 0x1 ? true : false;
+                        instance.upStream = ((boxData.get(offset++) >> 1) & 0x1) === 0x1 ? true : false;
 
-                        appleElementaryStreamDescriptor._bufferSizeDB = box_data.subarray(offset, 3).toUint();
+                        instance.bufferSizeDB = boxData.subarray(offset, 3).toUint();
                         offset += 3; // Done with bufferSizeDB
 
-                        appleElementaryStreamDescriptor._max_bitrate = box_data.subarray(offset, 4).toUint();
+                        const maximumBitrate: number = boxData.subarray(offset, 4).toUint();
+                        instance.maximumBitrate = AppleElementaryStreamDescriptor.calculateBitRate(maximumBitrate);
                         offset += 4; // Done with maxBitrate
 
-                        appleElementaryStreamDescriptor._average_bitrate = box_data.subarray(offset, 4).toUint();
+                        const averageBitrate: number = boxData.subarray(offset, 4).toUint();
+                        instance.averageBitrate = AppleElementaryStreamDescriptor.calculateBitRate(averageBitrate);
                         offset += 4; // Done with avgBitrate
 
                         // If there's a DecoderSpecificInfo[] array at the end it'll pick it up in the while loop
@@ -905,9 +876,9 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                 case DescriptorTag.DecSpecificInfoTag: // DecoderSpecificInfo
                     {
                         // The rest of the info is decoder specific.
-                        const length: number = appleElementaryStreamDescriptor.readLength(box_data, offset);
+                        const length: number = instance.readLength(boxData, offset);
 
-                        appleElementaryStreamDescriptor._decoderConfig = box_data.subarray(offset, length);
+                        instance.decoderConfig = boxData.subarray(offset, length);
                         offset += length; // We're done with the config
                     }
                     break;
@@ -915,7 +886,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                 case DescriptorTag.SLConfigDescrTag: // SLConfigDescriptor
                     {
                         // The rest of the info is SL specific.
-                        const length: number = appleElementaryStreamDescriptor.readLength(box_data, offset);
+                        const length: number = instance.readLength(boxData, offset);
 
                         offset += length; // Skip the rest of the descriptor as reported in the length so we can move onto the next one
                     }
@@ -934,7 +905,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                      * QoS_Descriptor qosDescr[0 .. 1];
                      */
                     // Every descriptor starts with a length
-                    const length: number = appleElementaryStreamDescriptor.readLength(box_data, offset);
+                    const length: number = instance.readLength(boxData, offset);
 
                     offset += length; // Skip the rest of the descriptor as reported in the length so we can move onto the next one
 
@@ -943,63 +914,11 @@ export class AppleElementaryStreamDescriptor extends FullBox {
             }
         }
 
-        return appleElementaryStreamDescriptor;
+        return instance;
     }
 
-    /**
-     * Gets the ID of the stream described by the current instance.
-     */
-    public get streamId(): number {
-        return this._streamId;
-    }
-
-    /**
-     * Gets the priority of the stream described by the current instance.
-     */
-    public get streamPriority(): number {
-        return this._streamPriority;
-    }
-
-    /**
-     * Gets the object type ID of the stream described by the current instance.
-     */
-    public get objectTypeId(): number {
-        return this._objectTypeId;
-    }
-
-    /**
-     * Gets the type the stream described by the current instance.
-     */
-    public get streamType(): number {
-        return this._streamType;
-    }
-
-    /**
-     * Gets the buffer size DB value the stream described by the current instance.
-     */
-    public get bufferSizeDB(): number {
-        return this._bufferSizeDB;
-    }
-
-    /**
-     *  Gets the maximum bitrate the stream described by the current instance.
-     */
-    public get maximumBitrate(): number {
-        return this._max_bitrate / 1000;
-    }
-
-    /**
-     * Gets the maximum average the stream described by the current instance.
-     */
-    public get averageBitrate(): number {
-        return this._average_bitrate / 1000;
-    }
-
-    /**
-     * Gets the decoder config data of stream described by the current instance.
-     */
-    public get decoderConfig(): ByteVector {
-        return this._decoderConfig;
+    public static calculateBitRate(bitrate: number): number {
+        return bitrate / 1000;
     }
 
     /**
@@ -1123,19 +1042,19 @@ export class IsoSampleEntry extends Mpeg4Box {
  */
 export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
     /**
-     * Contains the channel count.
+     * The number of channels in the audio represented by the current instance.
      */
-    private _channel_count: number;
+    public audioChannels: number;
 
     /**
-     * Contains the sample size.
+     * The sample size of the audio represented by the current instance.
      */
-    private _sample_size: number;
+    public audioSampleSize: number;
 
     /**
-     * Contains the sample rate.
+     * The sample rate of the audio represented by the current instance.
      */
-    private _sample_rate: number;
+    public audioSampleRate: number;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1155,17 +1074,18 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoAudioSampleEntry {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: IsoSampleEntry = IsoSampleEntry.fromHeaderFileAndHandler(header, file, handler);
-        const isoAudioSampleEntry: IsoAudioSampleEntry = base as IsoAudioSampleEntry;
-
+        const instance: IsoAudioSampleEntry = new IsoAudioSampleEntry();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        const base: IsoSampleEntry = instance as IsoSampleEntry;
         file.seek(base.dataPosition + 8);
-        isoAudioSampleEntry._channel_count = file.readBlock(2).toUshort();
-        isoAudioSampleEntry._sample_size = file.readBlock(2).toUshort();
+        instance.audioChannels = file.readBlock(2).toUshort();
+        instance.audioSampleSize = file.readBlock(2).toUshort();
         file.seek(base.dataPosition + 16);
-        isoAudioSampleEntry._sample_rate = file.readBlock(4).toUint();
-        isoAudioSampleEntry.children = isoAudioSampleEntry.loadChildren(file);
+        const sampleRate: number = file.readBlock(4).toUint();
+        instance.audioSampleRate = IsoAudioSampleEntry.calculateAudioSampleRate(sampleRate);
+        instance.children = instance.loadChildren(file);
 
-        return isoAudioSampleEntry;
+        return instance;
     }
 
     /**
@@ -1211,25 +1131,8 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
         return esds.averageBitrate;
     }
 
-    /**
-     * Gets the sample rate of the audio represented by the current instance.
-     */
-    public get audioSampleRate(): number {
-        return <number>(this._sample_rate >> 16);
-    }
-
-    /**
-     * Gets the number of channels in the audio represented by the current instance.
-     */
-    public get audioChannels(): number {
-        return this._channel_count;
-    }
-
-    /**
-     *  Gets the sample size of the audio represented by the current instance.
-     */
-    public get audioSampleSize(): number {
-        return this._sample_size;
+    public static calculateAudioSampleRate(sampleRate: number): number {
+        return <number>(sampleRate >> 16);
     }
 }
 
@@ -1242,7 +1145,7 @@ export class IsoChunkLargeOffsetBox extends FullBox {
     /**
      * The offset table contained in the current instance.
      */
-    private _offsets: number[];
+    public offsets: number[];
 
     /**
      * Private constructor to force construction via static functions.
@@ -1260,18 +1163,18 @@ export class IsoChunkLargeOffsetBox extends FullBox {
      * @returns
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoChunkLargeOffsetBox {
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoAudioSampleEntry: IsoChunkLargeOffsetBox = base as IsoChunkLargeOffsetBox;
+        const instance: IsoChunkLargeOffsetBox = new IsoChunkLargeOffsetBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
 
-        const box_data: ByteVector = file.readBlock(isoAudioSampleEntry.dataSize);
+        const boxData: ByteVector = file.readBlock(instance.dataSize);
 
-        isoAudioSampleEntry._offsets = [box_data.subarray(0, 4).toUint()];
+        instance.offsets = [boxData.subarray(0, 4).toUint()];
 
-        for (let i = 0; i < isoAudioSampleEntry._offsets.length; i++) {
-            isoAudioSampleEntry._offsets[i] = Number(box_data.subarray(4 + i * 8, 8).toUlong());
+        for (let i = 0; i < instance.offsets.length; i++) {
+            instance.offsets[i] = Number(boxData.subarray(4 + i * 8, 8).toUlong());
         }
 
-        return isoAudioSampleEntry;
+        return instance;
     }
 
     /**
@@ -1284,13 +1187,6 @@ export class IsoChunkLargeOffsetBox extends FullBox {
         }
 
         return output;
-    }
-
-    /**
-     * Gets the offset table contained in the current instance.
-     */
-    public get offsets(): number[] {
-        return this._offsets;
     }
 
     /**
@@ -1333,7 +1229,7 @@ export class IsoChunkOffsetBox extends FullBox {
     /**
      * The offset table contained in the current instance.
      */
-    private _offsets: number[];
+    public offsets: number[];
 
     /**
      * Private constructor to force construction via static functions.
@@ -1351,18 +1247,18 @@ export class IsoChunkOffsetBox extends FullBox {
      * @returns
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoChunkOffsetBox {
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoChunkOffsetBox: IsoChunkOffsetBox = base as IsoChunkOffsetBox;
+        const instance: IsoChunkOffsetBox = new IsoChunkOffsetBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
 
-        const box_data: ByteVector = file.readBlock(isoChunkOffsetBox.dataSize);
+        const boxData: ByteVector = file.readBlock(instance.dataSize);
 
-        isoChunkOffsetBox._offsets = [box_data.subarray(0, 4).toUint()];
+        instance.offsets = [boxData.subarray(0, 4).toUint()];
 
-        for (let i = 0; i < isoChunkOffsetBox._offsets.length; i++) {
-            isoChunkOffsetBox._offsets[i] = box_data.subarray(4 + i * 4, 4).toUint();
+        for (let i = 0; i < instance.offsets.length; i++) {
+            instance.offsets[i] = boxData.subarray(4 + i * 4, 4).toUint();
         }
 
-        return isoChunkOffsetBox;
+        return instance;
     }
 
     /**
@@ -1376,13 +1272,6 @@ export class IsoChunkOffsetBox extends FullBox {
         }
 
         return output;
-    }
-
-    /**
-     * Gets the offset table contained in the current instance.
-     */
-    public get offsets(): number[] {
-        return this._offsets;
     }
 
     /**
@@ -1425,7 +1314,7 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
     /**
      * Contains the size of the padding.
      */
-    private _padding: number;
+    public padding: number;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1443,11 +1332,11 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      * @returns A new instance of @see IsoFreeSpaceBox
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoFreeSpaceBox {
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const isoFreeSpaceBox: IsoFreeSpaceBox = base as IsoFreeSpaceBox;
-        isoFreeSpaceBox._padding = isoFreeSpaceBox.dataSize;
+        const instance: IsoFreeSpaceBox = new IsoFreeSpaceBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.padding = instance.dataSize;
 
-        return isoFreeSpaceBox;
+        return instance;
     }
 
     /**
@@ -1456,11 +1345,11 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      * @returns A new instance of @see IsoFreeSpaceBox
      */
     public static fromPadding(padding: number): IsoFreeSpaceBox {
-        const base: Mpeg4Box = Mpeg4Box.fromType(ByteVector.fromString("free", StringType.UTF8));
-        const isoFreeSpaceBox: IsoFreeSpaceBox = base as IsoFreeSpaceBox;
-        isoFreeSpaceBox.paddingSize = isoFreeSpaceBox._padding;
+        const instance: IsoFreeSpaceBox = new IsoFreeSpaceBox();
+        instance.initializeFromType(ByteVector.fromString("free", StringType.UTF8));
+        instance.paddingSize = instance.padding;
 
-        return isoFreeSpaceBox;
+        return instance;
     }
 
     /**
@@ -1468,10 +1357,10 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      * @returns A @see ByteVector object containing the data contained in the current instance.
      */
     public get data(): ByteVector {
-        return ByteVector.fromInt(this._padding);
+        return ByteVector.fromInt(this.padding);
     }
     public set data(v: ByteVector) {
-        this._padding = v !== null && v !== undefined ? v.length : 0;
+        this.padding = v !== null && v !== undefined ? v.length : 0;
     }
 
     /**
@@ -1479,10 +1368,10 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      * @returns A value containing the size the current instance will occupy when rendered.
      */
     public get paddingSize(): number {
-        return this._padding + 8;
+        return this.padding + 8;
     }
     public set paddingSize(v: number) {
-        this._padding = v - 8;
+        this.padding = v - 8;
     }
 }
 
@@ -1493,14 +1382,14 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
  */
 export class IsoHandlerBox extends FullBox {
     /**
-     * The handler type of the current instance.
+     * Contains the handler type of the current instance.
      */
-    private _handlerType: ByteVector;
+    public handlerType: ByteVector;
 
     /**
-     * The name of the current instance.
+     * Contains the name of the current instance.
      */
-    private _name: string;
+    public name: string;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1520,22 +1409,21 @@ export class IsoHandlerBox extends FullBox {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoHandlerBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoHandlerBox: IsoHandlerBox = base as IsoHandlerBox;
+        const instance: IsoHandlerBox = new IsoHandlerBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        file.seek(instance.dataPosition + 4);
+        const boxData: ByteVector = file.readBlock(instance.dataSize - 4);
+        instance.handlerType = boxData.subarray(0, 4);
 
-        file.seek(isoHandlerBox.dataPosition + 4);
-        const box_data: ByteVector = file.readBlock(isoHandlerBox.dataSize - 4);
-        isoHandlerBox._handlerType = box_data.subarray(0, 4);
-
-        let end: number = box_data.find(ByteVector.fromInt(0), 16);
+        let end: number = boxData.find(ByteVector.fromInt(0), 16);
 
         if (end < 16) {
-            end = box_data.length;
+            end = boxData.length;
         }
 
-        isoHandlerBox._name = end > 16 ? box_data.subarray(16, end - 16).toString(StringType.UTF8) : "";
+        instance.name = end > 16 ? boxData.subarray(16, end - 16).toString(StringType.UTF8) : "";
 
-        return isoHandlerBox;
+        return instance;
     }
 
     /**
@@ -1551,13 +1439,12 @@ export class IsoHandlerBox extends FullBox {
             throw new Error("The handler type must be four bytes long.");
         }
 
-        const base: FullBox = FullBox.fromTypeVersionAndFlags(ByteVector.fromString("hdlr", StringType.UTF8), 0, 0);
-        const isoHandlerBox: IsoHandlerBox = base as IsoHandlerBox;
+        const instance: IsoHandlerBox = new IsoHandlerBox();
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("hdlr", StringType.UTF8), 0, 0);
+        instance.handlerType = handlerType.subarray(0, 4);
+        instance.name = name;
 
-        isoHandlerBox._handlerType = handlerType.subarray(0, 4);
-        isoHandlerBox._name = name;
-
-        return isoHandlerBox;
+        return instance;
     }
 
     /**
@@ -1573,21 +1460,6 @@ export class IsoHandlerBox extends FullBox {
         );
 
         return output;
-    }
-
-    /**
-     * Gets the handler type of the current instance.
-     * @returns A @see ByteVector object containing the handler type of the current instance.
-     */
-    public get handlerType(): ByteVector {
-        return this._handlerType;
-    }
-
-    /**
-     * Gets the name of the current instance.
-     */
-    public get name(): string {
-        return this._name;
     }
 }
 
@@ -1643,39 +1515,34 @@ export class IsoMetaBox extends FullBox {
  */
 export class IsoMovieHeaderBox extends FullBox {
     /**
-     * The ID of the next track in the movie represented by the current instance.
+     * Contains the ID of the next track in the movie represented by the current instance.
      */
-    private _nextTrackId: number;
+    public nextTrackId: number;
 
     /**
      * Contains the creation time of the movie.
      */
-    private _creation_time: number;
+    public creationTime: number;
 
     /**
      * Contains the modification time of the movie.
      */
-    private _modification_time: number;
+    public modificationTime: number;
 
     /**
-     * Contains the timescale.
+     * Contains the duration of the movie represented by the current instance.
      */
-    private _timescale: number;
+    public durationInMilliseconds: number;
 
     /**
-     * Contains the duration.
+     *  Contains the playback rate of the movie represented by the current instance.
      */
-    private _duration: number;
+    public rate: number;
 
     /**
-     * Contains the rate.
+     *  Contains the playback volume of the movie represented by the current instance.
      */
-    private _rate: number;
-
-    /**
-     * Contains the volume.
-     */
-    private _volume: number;
+    public volume: number;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1695,108 +1562,100 @@ export class IsoMovieHeaderBox extends FullBox {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoMovieHeaderBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoMovieHeaderBox: IsoMovieHeaderBox = base as IsoMovieHeaderBox;
+        const instance: IsoMovieHeaderBox = new IsoMovieHeaderBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
 
-        let bytes_remaining: number = isoMovieHeaderBox.dataSize;
+        let bytesRemaining: number = instance.dataSize;
         let data: ByteVector;
 
-        if (isoMovieHeaderBox.version === 1) {
+        if (instance.version === 1) {
             // Read version one (large integers).
-            data = file.readBlock(Math.min(28, bytes_remaining));
+            data = file.readBlock(Math.min(28, bytesRemaining));
 
             if (data.length >= 8) {
-                isoMovieHeaderBox._creation_time = Number(data.subarray(0, 8).toUlong());
+                instance.creationTime = Number(data.subarray(0, 8).toUlong());
             }
 
             if (data.length >= 16) {
-                isoMovieHeaderBox._modification_time = Number(data.subarray(8, 8).toUlong());
+                instance.modificationTime = Number(data.subarray(8, 8).toUlong());
             }
+
+            let timescale: number = 0;
 
             if (data.length >= 20) {
-                isoMovieHeaderBox._timescale = data.subarray(16, 4).toUint();
+                timescale = data.subarray(16, 4).toUint();
             }
+
+            let duration: number = 0;
 
             if (data.length >= 28) {
-                isoMovieHeaderBox._duration = Number(data.subarray(20, 8).toUlong());
+                duration = Number(data.subarray(20, 8).toUlong());
+                instance.durationInMilliseconds = IsoMovieHeaderBox.calculateDurationInMilliseconds(duration, timescale);
             }
 
-            bytes_remaining -= 28;
+            bytesRemaining -= 28;
         } else {
             // Read version zero (normal integers).
-            data = file.readBlock(Math.min(16, bytes_remaining));
+            data = file.readBlock(Math.min(16, bytesRemaining));
 
             if (data.length >= 4) {
-                isoMovieHeaderBox._creation_time = data.subarray(0, 4).toUint();
+                instance.creationTime = data.subarray(0, 4).toUint();
             }
 
             if (data.length >= 8) {
-                isoMovieHeaderBox._modification_time = data.subarray(4, 4).toUint();
+                instance.modificationTime = data.subarray(4, 4).toUint();
             }
+
+            let timescale: number = 0;
 
             if (data.length >= 12) {
-                isoMovieHeaderBox._timescale = data.subarray(8, 4).toUint();
+                timescale = data.subarray(8, 4).toUint();
             }
+
+            let duration: number = 0;
 
             if (data.length >= 16) {
-                isoMovieHeaderBox._duration = data.subarray(12, 4).toUint();
+                duration = data.subarray(12, 4).toUint();
+                instance.durationInMilliseconds = IsoMovieHeaderBox.calculateDurationInMilliseconds(duration, timescale);
             }
 
-            bytes_remaining -= 16;
+            bytesRemaining -= 16;
         }
 
-        data = file.readBlock(Math.min(6, bytes_remaining));
+        data = file.readBlock(Math.min(6, bytesRemaining));
 
         if (data.length >= 4) {
-            isoMovieHeaderBox._rate = data.subarray(0, 4).toUint();
+            instance.rate = data.subarray(0, 4).toUint();
         }
 
         if (data.length >= 6) {
-            isoMovieHeaderBox._volume = data.subarray(4, 2).toUshort();
+            instance.volume = data.subarray(4, 2).toUshort();
         }
 
         file.seek(file.tell + 70);
-        bytes_remaining -= 76;
+        bytesRemaining -= 76;
 
-        data = file.readBlock(Math.min(4, bytes_remaining));
+        data = file.readBlock(Math.min(4, bytesRemaining));
 
         if (data.length >= 4) {
-            isoMovieHeaderBox._nextTrackId = data.subarray(0, 4).toUint();
+            instance.nextTrackId = data.subarray(0, 4).toUint();
         }
 
-        return isoMovieHeaderBox;
+        return instance;
     }
 
-    // TODO: properties CreationTime and ModificationTime are not yet implemented. There were no references to them in the original code.
-
-    /**
-     * Gets the duration of the movie represented by the current instance.
-     */
-    public get durationInMilliseconds(): number {
+    private static calculateDurationInMilliseconds(duration: number, timescale: number): number {
         // The length is the number of ticks divided by ticks per second.
         // TODO: not sure about conversion to Number here
-        return (this._duration / this._timescale) * 1000;
+        return (duration / timescale) * 1000;
     }
 
-    /**
-     *  Gets the playback rate of the movie represented by the current instance.
-     */
-    public get rate(): number {
-        return this._rate / 0x10000;
+    private static calculateRate(rate: number): number {
+        return rate / 0x10000;
     }
 
-    /**
-     *  Gets the playback volume of the movie represented by the current instance.
-     */
-    public get volume(): number {
-        return this._volume / 0x100;
-    }
-
-    /**
-     * Gets the ID of the next track in the movie represented by the current instance.
-     */
-    public get nextTrackId(): number {
-        return this._nextTrackId;
+    private static calculateVolume(volume: number): number {
+        return volume / 0x100;
     }
 }
 
@@ -1810,7 +1669,7 @@ export class IsoSampleDescriptionBox extends FullBox {
      * The number of boxes at the beginning of the children that will be stored as @see IsoAudioSampleEntry
      * of @see IsoVisualSampleEntry" objects, depending on the handler.
      */
-    private _entryCount: number;
+    public entryCount: number;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1830,13 +1689,12 @@ export class IsoSampleDescriptionBox extends FullBox {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoSampleDescriptionBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoSampleDescriptionBox: IsoSampleDescriptionBox = base as IsoSampleDescriptionBox;
+        const instance: IsoSampleDescriptionBox = new IsoSampleDescriptionBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.entryCount = file.readBlock(4).toUint();
+        instance.children = instance.loadChildren(file);
 
-        isoSampleDescriptionBox._entryCount = file.readBlock(4).toUint();
-        isoSampleDescriptionBox.children = isoSampleDescriptionBox.loadChildren(file);
-
-        return isoSampleDescriptionBox;
+        return instance;
     }
 
     /**
@@ -1844,14 +1702,6 @@ export class IsoSampleDescriptionBox extends FullBox {
      */
     public get dataPosition(): number {
         return super.dataPosition + 4;
-    }
-
-    /**
-     * Gets the number of boxes at the beginning of the children that will be stored as @see IsoAudioSampleEntry
-     * of @see IsoVisualSampleEntry" objects, depending on the handler.
-     */
-    public get entryCount(): number {
-        return this._entryCount;
     }
 }
 
@@ -1879,12 +1729,11 @@ export class IsoSampleTableBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoSampleTableBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const isoSampleTableBox: IsoSampleTableBox = base as IsoSampleTableBox;
+        const instance: IsoSampleTableBox = new IsoSampleTableBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.children = instance.loadChildren(file);
 
-        isoSampleTableBox.children = isoSampleTableBox.loadChildren(file);
-
-        return isoSampleTableBox;
+        return instance;
     }
 }
 
@@ -1947,12 +1796,12 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
     /**
      * Contains the width of the visual.
      */
-    private _width: number;
+    public videoWidth: number;
 
     /**
      * Contains the height of the visual.
      */
-    private _height: number;
+    public videoHeight: number;
 
     /**
      * Private constructor to force construction via static functions.
@@ -1964,19 +1813,14 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoVisualSampleEntry {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: IsoSampleEntry = IsoSampleEntry.fromHeaderFileAndHandler(header, file, handler);
-        const isoVisualSampleEntry: IsoVisualSampleEntry = base as IsoVisualSampleEntry;
-
+        const instance: IsoVisualSampleEntry = new IsoVisualSampleEntry();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        const base: IsoSampleEntry = instance as IsoSampleEntry;
         file.seek(base.dataPosition + 16);
-        isoVisualSampleEntry._width = file.readBlock(2).toUshort();
-        isoVisualSampleEntry._height = file.readBlock(2).toUshort();
+        instance.videoWidth = file.readBlock(2).toUshort();
+        instance.videoHeight = file.readBlock(2).toUshort();
 
-        /*
-		TODO: What are the children anyway?
-		children = LoadChildren (file);
-		*/
-
-        return isoVisualSampleEntry;
+        return instance;
     }
 
     /**
@@ -2006,20 +1850,6 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
     public get description(): string {
         return `MPEG-4 Video (${this.boxType})`;
     }
-
-    /**
-     * Gets the width of the video represented by the current instance.
-     */
-    public get videoWidth(): number {
-        return this._width;
-    }
-
-    /**
-     * Gets the height of the video represented by the current instance.
-     */
-    public get videoHeight(): number {
-        return this._height;
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2028,11 +1858,6 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
  * Represents an MP4 text box
  */
 export class TextBox extends Mpeg4Box {
-    /**
-     * Contains the box's data.
-     */
-    private _data: ByteVector;
-
     /**
      * Private constructor to force construction via static functions.
      */
@@ -2051,34 +1876,18 @@ export class TextBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): TextBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const textBox: TextBox = base as TextBox;
+        const instance: TextBox = new TextBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
 
-        textBox._data = textBox.loadData(file);
+        instance.data = instance.loadData(file);
 
-        return textBox;
-    }
-
-    /**
-     * Gets and sets the box data contained in the current instance.
-     */
-    public get data(): ByteVector {
-        return this._data;
-    }
-
-    public set data(v: ByteVector) {
-        this._data = v;
+        return instance;
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export class UnknownBox extends Mpeg4Box {
-    /**
-     * Contains the box's data.
-     */
-    private _data: ByteVector;
-
     /**
      * Private constructor to force construction via static functions.
      */
@@ -2097,34 +1906,17 @@ export class UnknownBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): UnknownBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const unknownBox: UnknownBox = base as UnknownBox;
+        const instance: UnknownBox = new UnknownBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.data = file.readBlock(instance.dataSize > 0 ? instance.dataSize : 0);
 
-        unknownBox._data = file.readBlock(unknownBox.dataSize > 0 ? unknownBox.dataSize : 0);
-
-        return unknownBox;
-    }
-
-    /**
-     * Gets and sets the box data contained in the current instance.
-     */
-    public get data(): ByteVector {
-        return this._data;
-    }
-
-    public set data(v: ByteVector) {
-        this._data = v;
+        return instance;
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export class UrlBox extends Mpeg4Box {
-    /**
-     * Contains the box's data.
-     */
-    private _data: ByteVector;
-
     /**
      * Private constructor to force construction via static functions.
      */
@@ -2143,22 +1935,10 @@ export class UrlBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): UrlBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const urlBox: UrlBox = base as UrlBox;
+        const instance: UrlBox = new UrlBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.data = instance.loadData(file);
 
-        urlBox._data = urlBox.loadData(file);
-
-        return urlBox;
-    }
-
-    /**
-     * Gets and sets the box data contained in the current instance.
-     */
-    public get data(): ByteVector {
-        return this._data;
-    }
-
-    public set data(v: ByteVector) {
-        this._data = v;
+        return instance;
     }
 }
