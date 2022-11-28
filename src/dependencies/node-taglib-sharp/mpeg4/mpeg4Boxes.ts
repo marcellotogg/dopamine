@@ -61,6 +61,9 @@ export class Mpeg4Box {
      */
     public children: Mpeg4Box[] = [];
 
+    /**
+     * Protected constructor to force construction via static functions.
+     */
     protected constructor() {}
 
     /**
@@ -405,6 +408,9 @@ export class FullBox extends Mpeg4Box {
      */
     public flags: number;
 
+    /**
+     * Protected constructor to force construction via static functions.
+     */
     protected constructor() {
         super();
     }
@@ -480,7 +486,10 @@ export class AppleAdditionalInfoBox extends FullBox {
      */
     private _data: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -493,11 +502,11 @@ export class AppleAdditionalInfoBox extends FullBox {
      * @returns A new instance of @see AppleAdditionalInfoBox.
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): AppleAdditionalInfoBox {
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const appleAdditionalInfoBox: AppleAdditionalInfoBox = base as AppleAdditionalInfoBox;
-        appleAdditionalInfoBox.data = file.readBlock(appleAdditionalInfoBox.dataSize > 0 ? appleAdditionalInfoBox.dataSize : 0);
+        const instance: AppleAdditionalInfoBox = new AppleAdditionalInfoBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.data = file.readBlock(instance.dataSize > 0 ? instance.dataSize : 0);
 
-        return appleAdditionalInfoBox;
+        return instance;
     }
 
     /**
@@ -508,10 +517,10 @@ export class AppleAdditionalInfoBox extends FullBox {
      * @returns A new instance of @see FullBox.
      */
     public static fromTypeVersionAndFlags(type: ByteVector, version: number, flags: number): AppleAdditionalInfoBox {
-        const base: FullBox = FullBox.fromTypeVersionAndFlags(type, version, flags);
-        const appleAdditionalInfoBox: AppleAdditionalInfoBox = base as AppleAdditionalInfoBox;
+        const instance: AppleAdditionalInfoBox = new AppleAdditionalInfoBox();
+        instance.initializeFromTypeVersionAndFlags(type, version, flags);
 
-        return appleAdditionalInfoBox;
+        return instance;
     }
 
     /**
@@ -541,7 +550,10 @@ export class AppleAdditionalInfoBox extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of an Apple AnnotationBox.
  */
 export default class AppleAnnotationBox extends Mpeg4Box {
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -556,11 +568,11 @@ export default class AppleAnnotationBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): AppleAnnotationBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const appleAnnotationBox: AppleAnnotationBox = base as AppleAnnotationBox;
-        appleAnnotationBox.children = appleAnnotationBox.loadChildren(file);
+        const instance: AppleAnnotationBox = new AppleAnnotationBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.children = instance.loadChildren(file);
 
-        return appleAnnotationBox;
+        return instance;
     }
 
     /**
@@ -569,11 +581,11 @@ export default class AppleAnnotationBox extends Mpeg4Box {
      * @returns A new instance of @see AppleAnnotationBox
      */
     public static fromType(type: ByteVector): AppleAnnotationBox {
-        const base: Mpeg4Box = Mpeg4Box.fromType(type);
-        const appleAnnotationBox: AppleAnnotationBox = base as AppleAnnotationBox;
-        appleAnnotationBox.children = [];
+        const instance: AppleAnnotationBox = new AppleAnnotationBox();
+        instance.initializeFromType(type);
+        instance.children = [];
 
-        return appleAnnotationBox;
+        return instance;
     }
 }
 
@@ -588,7 +600,10 @@ export class AppleDataBox extends FullBox {
      */
     private _data: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -603,11 +618,11 @@ export class AppleDataBox extends FullBox {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): AppleDataBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const appleDataBox: AppleDataBox = base as AppleDataBox;
-        appleDataBox.data = appleDataBox.loadData(file);
+        const instance: AppleDataBox = new AppleDataBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.data = instance.loadData(file);
 
-        return appleDataBox;
+        return instance;
     }
 
     /**
@@ -617,10 +632,10 @@ export class AppleDataBox extends FullBox {
      * @returns
      */
     public static fromDataAndFlags(data: ByteVector, flags: number): AppleDataBox {
-        const base: FullBox = FullBox.fromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags);
-        const appleDataBox: AppleDataBox = base as AppleDataBox;
+        const instance: AppleDataBox = new AppleDataBox();
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags);
 
-        return appleDataBox;
+        return instance;
     }
 
     /**
@@ -752,7 +767,10 @@ export class AppleElementaryStreamDescriptor extends FullBox {
      */
     private _decoderConfig: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1011,7 +1029,10 @@ export class AppleElementaryStreamDescriptor extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of an Apple ItemListBox.
  */
 export class AppleItemListBox extends Mpeg4Box {
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1026,12 +1047,12 @@ export class AppleItemListBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): AppleItemListBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const appleItemListBox: AppleItemListBox = base as AppleItemListBox;
+        const instance: AppleItemListBox = new AppleItemListBox();
 
-        appleItemListBox.children = appleItemListBox.loadChildren(file);
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.children = instance.loadChildren(file);
 
-        return appleItemListBox;
+        return instance;
     }
 
     /**
@@ -1039,12 +1060,11 @@ export class AppleItemListBox extends Mpeg4Box {
      * @returns A new instance of @see AppleItemListBox
      */
     public static fromEmpty(): AppleItemListBox {
-        const base: Mpeg4Box = Mpeg4Box.fromType(ByteVector.fromString("ilst", StringType.UTF8));
-        const appleItemListBox: AppleItemListBox = base as AppleItemListBox;
+        const instance: AppleItemListBox = new AppleItemListBox();
+        instance.initializeFromType(ByteVector.fromString("ilst", StringType.UTF8));
+        instance.children = [];
 
-        appleItemListBox.children = [];
-
-        return appleItemListBox;
+        return instance;
     }
 }
 
@@ -1056,7 +1076,10 @@ export class IsoSampleEntry extends Mpeg4Box {
      */
     private _dataReferenceIndex: number;
 
-    public constructor() {
+    /**
+     * Protected constructor to force construction via static functions.
+     */
+    protected constructor() {
         super();
     }
 
@@ -1066,18 +1089,13 @@ export class IsoSampleEntry extends Mpeg4Box {
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
      * @param file A @see File object to read the contents of the box from.
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
-     * @returns A new instance of @see IsoSampleEntry
      */
-    public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoSampleEntry {
+    public initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        file.seek(base.dataPosition + 6);
-
-        const isoSampleEntry: IsoSampleEntry = base as IsoSampleEntry;
-        isoSampleEntry._dataReferenceIndex = file.readBlock(2).toUshort();
-
-        return isoSampleEntry;
+        this.initializeFromHeaderAndHandler(header, handler);
+        file.seek(super.dataPosition + 6);
+        this._dataReferenceIndex = file.readBlock(2).toUshort();
     }
 
     /**
@@ -1119,7 +1137,10 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
      */
     private _sample_rate: number;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1223,7 +1244,10 @@ export class IsoChunkLargeOffsetBox extends FullBox {
      */
     private _offsets: number[];
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1311,7 +1335,10 @@ export class IsoChunkOffsetBox extends FullBox {
      */
     private _offsets: number[];
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1400,7 +1427,10 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      */
     private _padding: number;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1472,7 +1502,10 @@ export class IsoHandlerBox extends FullBox {
      */
     private _name: string;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1574,11 +1607,11 @@ export class IsoMetaBox extends FullBox {
      * @returns A new instance of @see IsoMetaBox
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoMetaBox {
-        const base: FullBox = FullBox.fromHeaderFileAndHandler(header, file, handler);
-        const isoMetaBox: IsoMetaBox = base as IsoMetaBox;
-        isoMetaBox.children = isoMetaBox.loadChildren(file);
+        const instance: IsoMetaBox = new IsoMetaBox();
+        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.children = instance.loadChildren(file);
 
-        return isoMetaBox;
+        return instance;
     }
 
     /**
@@ -1594,13 +1627,12 @@ export class IsoMetaBox extends FullBox {
             throw new Error("The handler type must be four bytes long.");
         }
 
-        const base: FullBox = FullBox.fromTypeVersionAndFlags(ByteVector.fromString("meta", StringType.UTF8), 0, 0);
-        const isoMetaBox: IsoMetaBox = base as IsoMetaBox;
+        const instance: IsoMetaBox = new IsoMetaBox();
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("meta", StringType.UTF8), 0, 0);
+        instance.children = [];
+        instance.addChild(IsoHandlerBox.fromHandlerTypeAndHandlerName(handlerType, handlerName));
 
-        isoMetaBox.children = [];
-        isoMetaBox.addChild(IsoHandlerBox.fromHandlerTypeAndHandlerName(handlerType, handlerName));
-
-        return isoMetaBox;
+        return instance;
     }
 }
 
@@ -1645,7 +1677,10 @@ export class IsoMovieHeaderBox extends FullBox {
      */
     private _volume: number;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1777,7 +1812,10 @@ export class IsoSampleDescriptionBox extends FullBox {
      */
     private _entryCount: number;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1823,7 +1861,10 @@ export class IsoSampleDescriptionBox extends FullBox {
  * This class extends @see Mpeg4Box to provide an implementation of a ISO/IEC 14496-12 SampleTableBox.
  */
 export class IsoSampleTableBox extends Mpeg4Box {
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1858,7 +1899,10 @@ export class IsoUserDataBox extends Mpeg4Box {
      */
     public parentTree: Mpeg4BoxHeader[];
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1873,12 +1917,11 @@ export class IsoUserDataBox extends Mpeg4Box {
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoUserDataBox {
         Guards.notNullOrUndefined(file, "file");
 
-        const base: Mpeg4Box = Mpeg4Box.fromHeaderAndHandler(header, handler);
-        const isoUserDataBox: IsoUserDataBox = base as IsoUserDataBox;
+        const instance: IsoUserDataBox = new IsoUserDataBox();
+        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.children = instance.loadChildren(file);
 
-        isoUserDataBox.children = isoUserDataBox.loadChildren(file);
-
-        return isoUserDataBox;
+        return instance;
     }
 
     /**
@@ -1886,12 +1929,11 @@ export class IsoUserDataBox extends Mpeg4Box {
      * @returns A new instance of @see IsoUserDataBox
      */
     public static fromEmpty(): IsoUserDataBox {
-        const base: Mpeg4Box = Mpeg4Box.fromType(ByteVector.fromString("udta", StringType.UTF8));
-        const isoUserDataBox: IsoUserDataBox = base as IsoUserDataBox;
+        const instance: IsoUserDataBox = new IsoUserDataBox();
+        instance.initializeFromType(ByteVector.fromString("udta", StringType.UTF8));
+        instance.children = [];
 
-        isoUserDataBox.children = [];
-
-        return isoUserDataBox;
+        return instance;
     }
 }
 
@@ -1912,7 +1954,10 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
      */
     private _height: number;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -1988,7 +2033,10 @@ export class TextBox extends Mpeg4Box {
      */
     private _data: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -2031,7 +2079,10 @@ export class UnknownBox extends Mpeg4Box {
      */
     private _data: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
@@ -2074,7 +2125,10 @@ export class UrlBox extends Mpeg4Box {
      */
     private _data: ByteVector;
 
-    public constructor() {
+    /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {
         super();
     }
 
