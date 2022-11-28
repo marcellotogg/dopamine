@@ -27,12 +27,12 @@ export default class AppleTag extends Tag {
     /**
      * Contains the ISO meta box in which that tag will be stored.
      */
-    private readonly _meta_box: IsoMetaBox;
+    private readonly _metaBox: IsoMetaBox;
 
     /**
      * Contains the ILST box which holds all the values.
      */
-    private readonly _ilst_box: AppleItemListBox;
+    private readonly _ilstBox: AppleItemListBox;
 
     /**
      * Constructs and initializes a new instance of @see AppleTag for a specified ISO user data box.
@@ -43,18 +43,18 @@ export default class AppleTag extends Tag {
 
         Guards.notNullOrUndefined(box, "box");
 
-        this._meta_box = box.getChild(Mpeg4BoxType.Meta) as IsoMetaBox;
+        this._metaBox = box.getChild(Mpeg4BoxType.Meta) as IsoMetaBox;
 
-        if (this._meta_box === null || this._meta_box === undefined) {
-            this._meta_box = IsoMetaBox.fromHandlerTypeAndHandlerName(ByteVector.fromString("mdir", StringType.UTF8), undefined);
-            box.addChild(this._meta_box);
+        if (this._metaBox === null || this._metaBox === undefined) {
+            this._metaBox = IsoMetaBox.fromHandlerTypeAndHandlerName(ByteVector.fromString("mdir", StringType.UTF8), undefined);
+            box.addChild(this._metaBox);
         }
 
-        this._ilst_box = this._meta_box.getChild(Mpeg4BoxType.Ilst) as AppleItemListBox;
+        this._ilstBox = this._metaBox.getChild(Mpeg4BoxType.Ilst) as AppleItemListBox;
 
-        if (this._ilst_box === null || this._ilst_box === undefined) {
-            this._ilst_box = AppleItemListBox.fromEmpty();
-            this._meta_box.addChild(this._ilst_box);
+        if (this._ilstBox === null || this._ilstBox === undefined) {
+            this._ilstBox = AppleItemListBox.fromEmpty();
+            this._metaBox.addChild(this._ilstBox);
         }
     }
 
@@ -805,14 +805,14 @@ export default class AppleTag extends Tag {
      * Gets whether or not the current instance is empty.
      */
     public get isEmpty(): boolean {
-        return !this._ilst_box.hasChildren;
+        return !this._ilstBox.hasChildren;
     }
 
     /**
      * Clears the values stored in the current instance.
      */
     public clear(): void {
-        this._ilst_box.clearChildren();
+        this._ilstBox.clearChildren();
     }
 
     /**
@@ -821,27 +821,28 @@ export default class AppleTag extends Tag {
      * @returns A @see AppleDataBox[] object enumerating the matching boxes.
      */
     public dataBoxesFromTypes(types: ByteVector[]): AppleDataBox[] {
-        // Check each box to see if the match any of the
-        // provided types. If a match is found, loop through the
-        // children and add any data box.
-        for (const box of this._ilst_box.children) {
+        const dataBoxes: AppleDataBox[] = [];
+
+        /**
+         * Check each box to see if the match any of the provided types. 
+         * If a match is found, loop through the children and add any data box.
+         */
+        for (const box of this._ilstBox.children) {
             for (const byteVector of types) {
-                if (Mpeg4Utils.fixId(byteVector).makeReadOnly() !== box.boxType) {
+                if (ByteVector.compare(Mpeg4Utils.fixId(byteVector).makeReadOnly(), box.boxType) !== 0) {
                     continue;
                 }
 
                 // TODO: hopefully this is correct. I hate yield return (see original code).
-                const data_boxes: AppleDataBox[] = [];
-
                 for (const data_box of box.children) {
                     if (data_box instanceof AppleDataBox) {
-                        data_boxes.push(data_box as AppleDataBox);
+                        dataBoxes.push(data_box as AppleDataBox);
                     }
                 }
-
-                return data_boxes;
             }
         }
+
+        return dataBoxes;
     }
 
     /**
@@ -861,8 +862,8 @@ export default class AppleTag extends Tag {
      */
     public DataBoxesFromMeanAndName(mean: string, name: string): AppleDataBox[] {
         // These children will have a box type of "----"
-        for (const box of this._ilst_box.children) {
-            if (box.boxType !== Mpeg4BoxType.DASH) {
+        for (const box of this._ilstBox.children) {
+            if (ByteVector.compare(box.boxType, Mpeg4BoxType.DASH) !== 0) {
                 continue;
             }
 
@@ -929,8 +930,8 @@ export default class AppleTag extends Tag {
 
         let added: boolean = false;
 
-        for (const box of this._ilst_box.children) {
-            if (type === box.boxType) {
+        for (const box of this._ilstBox.children) {
+            if (ByteVector.compare(type, box.boxType) === 0) {
                 // Clear the box's children.
                 box.clearChildren();
 
@@ -953,7 +954,7 @@ export default class AppleTag extends Tag {
         }
 
         const box2: Mpeg4Box = AppleAnnotationBox.fromType(type);
-        this._ilst_box.addChild(box2);
+        this._ilstBox.addChild(box2);
 
         for (const appleDataBox of boxes) {
             box2.addChild(appleDataBox);
@@ -1004,7 +1005,7 @@ export default class AppleTag extends Tag {
     public setTextFromTypeAndTextCollection(type: ByteVector, textCollection: string[]): void {
         // Remove empty data and return.
         if (textCollection === null || textCollection === undefined) {
-            this._ilst_box.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
+            this._ilstBox.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
 
             return;
         }
@@ -1020,7 +1021,7 @@ export default class AppleTag extends Tag {
     public setTextFromTypeAndText(type: ByteVector, text: string): void {
         // Remove empty data and return.
         if (!text) {
-            this._ilst_box.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
+            this._ilstBox.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
 
             return;
         }
@@ -1035,14 +1036,14 @@ export default class AppleTag extends Tag {
      * @param type A @see ByteVector object containing the type of box to remove from the current instance.
      */
     public clearData(type: ByteVector): void {
-        this._ilst_box.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
+        this._ilstBox.removeChildByType(Mpeg4Utils.fixId(type).makeReadOnly());
     }
 
     /**
      * Detaches the internal "ilst" box from its parent element.
      */
     public detachIlst(): void {
-        this._meta_box.removeChildByBox(this._ilst_box);
+        this._metaBox.removeChildByBox(this._ilstBox);
     }
 
     /**
@@ -1092,32 +1093,32 @@ export default class AppleTag extends Tag {
      * @param datastring String specifying text for data box
      */
     public setDashBox(meanstring: string, namestring: string, datastring: string): void {
-        const data_box: AppleDataBox = this.getDashAtom(meanstring, namestring);
+        const dataBox: AppleDataBox = this.getDashAtom(meanstring, namestring);
 
         // If we did find a data_box and we have an empty datastring we should remove the entire dash box.
-        if (data_box !== null && data_box !== undefined && !datastring) {
+        if (dataBox !== null && dataBox !== undefined && !datastring) {
             const dash_box: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
             dash_box.clearChildren();
-            this._ilst_box.removeChildByBox(dash_box);
+            this._ilstBox.removeChildByBox(dash_box);
 
             return;
         }
 
-        if (data_box !== null && data_box !== undefined) {
-            data_box.text = datastring;
+        if (dataBox !== null && dataBox !== undefined) {
+            dataBox.text = datastring;
         } else {
             // Create the new boxes, should use 1 for text as a flag
-            const amean_box: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Mean, 0, 1);
-            const aname_box: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Name, 0, 1);
+            const ameanBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Mean, 0, 1);
+            const anameBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Name, 0, 1);
             const adata_box: AppleDataBox = AppleDataBox.fromDataAndFlags(Mpeg4BoxType.Data, 1);
-            amean_box.text = meanstring;
-            aname_box.text = namestring;
+            ameanBox.text = meanstring;
+            anameBox.text = namestring;
             adata_box.text = datastring;
-            const whole_box = AppleAnnotationBox.fromType(Mpeg4BoxType.DASH);
-            whole_box.addChild(amean_box);
-            whole_box.addChild(aname_box);
-            whole_box.addChild(adata_box);
-            this._ilst_box.addChild(whole_box);
+            const wholeBox = AppleAnnotationBox.fromType(Mpeg4BoxType.DASH);
+            wholeBox.addChild(ameanBox);
+            wholeBox.addChild(anameBox);
+            wholeBox.addChild(adata_box);
+            this._ilstBox.addChild(wholeBox);
         }
     }
 
@@ -1130,43 +1131,43 @@ export default class AppleTag extends Tag {
      * @param datastring String values specifying text for data boxes
      */
     public setDashBoxes(meanstring: string, namestring: string, datastring: string[]): void {
-        const data_boxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
+        const dataBoxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
 
         // If we did find a data_box and we have an empty datastring we should remove the entire dash box.
-        if (data_boxes !== null && data_boxes !== undefined && !datastring[0]) {
-            const dash_box: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
-            dash_box.clearChildren();
-            this._ilst_box.removeChildByBox(dash_box);
+        if (dataBoxes !== null && dataBoxes !== undefined && !datastring[0]) {
+            const dashBox: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
+            dashBox.clearChildren();
+            this._ilstBox.removeChildByBox(dashBox);
 
             return;
         }
 
-        if (data_boxes !== null && data_boxes !== undefined && data_boxes.length === datastring.length) {
-            for (let i = 0; i < data_boxes.length; i++) {
-                data_boxes[i].text = datastring[i];
+        if (dataBoxes !== null && dataBoxes !== undefined && dataBoxes.length === datastring.length) {
+            for (let i = 0; i < dataBoxes.length; i++) {
+                dataBoxes[i].text = datastring[i];
             }
         } else {
             // Remove all Boxes
-            const dash_box: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
-            if (dash_box !== null && dash_box !== undefined) {
-                dash_box.clearChildren();
-                this._ilst_box.removeChildByBox(dash_box);
+            const dashBox: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
+            if (dashBox !== null && dashBox !== undefined) {
+                dashBox.clearChildren();
+                this._ilstBox.removeChildByBox(dashBox);
             }
 
-            const whole_box: AppleAnnotationBox = AppleAnnotationBox.fromType(Mpeg4BoxType.DASH);
+            const wholeBox: AppleAnnotationBox = AppleAnnotationBox.fromType(Mpeg4BoxType.DASH);
 
             for (const text of datastring) {
                 // Create the new boxes, should use 1 for text as a flag.
-                const amean_box: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Mean, 0, 1);
-                const aname_box: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Name, 0, 1);
-                const adata_box: AppleDataBox = AppleDataBox.fromDataAndFlags(Mpeg4BoxType.Data, 1);
-                amean_box.text = meanstring;
-                aname_box.text = namestring;
-                adata_box.text = text;
-                whole_box.addChild(amean_box);
-                whole_box.addChild(aname_box);
-                whole_box.addChild(adata_box);
-                this._ilst_box.addChild(whole_box);
+                const ameanBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Mean, 0, 1);
+                const anameBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Name, 0, 1);
+                const adataBox: AppleDataBox = AppleDataBox.fromDataAndFlags(Mpeg4BoxType.Data, 1);
+                ameanBox.text = meanstring;
+                anameBox.text = namestring;
+                adataBox.text = text;
+                wholeBox.addChild(ameanBox);
+                wholeBox.addChild(anameBox);
+                wholeBox.addChild(adataBox);
+                this._ilstBox.addChild(wholeBox);
             }
         }
     }
@@ -1178,23 +1179,23 @@ export default class AppleTag extends Tag {
      * @returns Existing AppleDataBox or undefined if one does not exist
      */
     private getDashAtom(meanstring: string, namestring: string): AppleDataBox {
-        for (const box of this._ilst_box.children) {
-            if (box.boxType !== Mpeg4BoxType.DASH) {
+        for (const box of this._ilstBox.children) {
+            if (ByteVector.compare(box.boxType, Mpeg4BoxType.DASH) !== 0) {
                 continue;
             }
 
             // Get the mean and name boxes, make sure they're legit, check the Text fields for a match.
             // If we have a match return the AppleDataBox containing the data.
-            const mean_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
-            const name_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
+            const meanBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
+            const nameBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
 
             if (
-                mean_box === null ||
-                mean_box === undefined ||
-                name_box === null ||
-                name_box === undefined ||
-                mean_box.text !== meanstring ||
-                name_box.text.toLowerCase() !== namestring.toLowerCase()
+                meanBox === null ||
+                meanBox === undefined ||
+                nameBox === null ||
+                nameBox === undefined ||
+                meanBox.text !== meanstring ||
+                nameBox.text.toLowerCase() !== namestring.toLowerCase()
             ) {
                 continue;
             } else {
@@ -1213,23 +1214,23 @@ export default class AppleTag extends Tag {
      * @returns Existing AppleDataBox or null if one does not exist
      */
     private getDashAtoms(meanstring: string, namestring: string): AppleDataBox[] {
-        for (const box of this._ilst_box.children) {
-            if (box.boxType !== Mpeg4BoxType.DASH) {
+        for (const box of this._ilstBox.children) {
+            if (ByteVector.compare(box.boxType, Mpeg4BoxType.DASH) !== 0) {
                 continue;
             }
 
             // Get the mean and name boxes, make sure they're legit, check the Text fields for a match.
             // If we have a match return the AppleDataBox containing the data.
-            const mean_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
-            const name_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
+            const meanBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
+            const nameBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
 
             if (
-                mean_box === null ||
-                mean_box === undefined ||
-                name_box === null ||
-                name_box === undefined ||
-                mean_box.text !== meanstring ||
-                name_box.text.toLowerCase() !== namestring.toLowerCase()
+                meanBox === null ||
+                meanBox === undefined ||
+                nameBox === null ||
+                nameBox === undefined ||
+                meanBox.text !== meanstring ||
+                nameBox.text.toLowerCase() !== namestring.toLowerCase()
             ) {
                 continue;
             } else {
@@ -1248,23 +1249,23 @@ export default class AppleTag extends Tag {
      * @returns AppleAnnotationBox object that is the parent for the mean/name combination
      */
     private getParentDashBox(meanstring: string, namestring: string): AppleAnnotationBox {
-        for (const box of this._ilst_box.children) {
-            if (box.boxType !== Mpeg4BoxType.DASH) {
+        for (const box of this._ilstBox.children) {
+            if (ByteVector.compare(box.boxType, Mpeg4BoxType.DASH) !== 0) {
                 continue;
             }
 
             // Get the mean and name boxes, make sure they're legit, check the Text fields for a match.
             // If we have a match return the AppleAnnotationBox that is the Parent.
-            const mean_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
-            const name_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
+            const meanBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
+            const nameBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
 
             if (
-                mean_box === null ||
-                mean_box === undefined ||
-                name_box === null ||
-                name_box === undefined ||
-                mean_box.text !== meanstring ||
-                name_box.text !== namestring
+                meanBox === null ||
+                meanBox === undefined ||
+                nameBox === null ||
+                nameBox === undefined ||
+                meanBox.text !== meanstring ||
+                nameBox.text !== namestring
             ) {
                 continue;
             } else {
