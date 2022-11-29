@@ -16,7 +16,7 @@ export default class Mpeg4File extends File {
     /**
      * Contains the Apple tag.
      */
-    private _apple_tag: AppleTag;
+    private _appleTag: AppleTag;
 
     /**
      * Contains the combined tag.
@@ -58,7 +58,7 @@ export default class Mpeg4File extends File {
             // Read the file
             const parser = new Mpeg4FileParser(this);
 
-            if (readStyle === ReadStyle.Average) {
+            if ((readStyle & ReadStyle.Average) === 0) {
                 parser.parseTag();
             } else {
                 parser.parseTagAndProperties();
@@ -87,8 +87,8 @@ export default class Mpeg4File extends File {
                 udtaBox = IsoUserDataBox.fromEmpty();
             }
 
-            this._apple_tag = new AppleTag(udtaBox);
-            this._tag.addTag(this._apple_tag);
+            this._appleTag = new AppleTag(udtaBox);
+            this._tag.addTag(this._appleTag);
 
             // If we're not reading properties, we're done.
             // TODO: was this check converted correctly?
