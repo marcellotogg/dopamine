@@ -362,7 +362,7 @@ export class Mpeg4Box {
         }
 
         // If there was a free, don't take it away, and let meta be a special case.
-        if (freeFound || this.boxType === Mpeg4BoxType.Meta) {
+        if (freeFound || ByteVector.compare(this.boxType, Mpeg4BoxType.Meta) === 0) {
             const sizeDifference: number = this.dataSize - output.length;
 
             if (this._header.dataSize !== 0 && sizeDifference >= 8) {
@@ -700,12 +700,12 @@ export class AppleElementaryStreamDescriptor extends FullBox {
     /**
      *  The maximum bitrate the stream described by the current instance.
      */
-     public maximumBitrate: number;
+    public maximumBitrate: number;
 
-     /**
-      * The maximum average the stream described by the current instance.
-      */
-     public averageBitrate: number;
+    /**
+     * The maximum average the stream described by the current instance.
+     */
+    public averageBitrate: number;
 
     /**
      * The ID of the stream described by the current instance.
@@ -817,9 +817,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
                 throw new Error("Insufficient data present.");
             }
 
-            instance.urlString = boxData
-                .subarray(offset, instance.urlLength)
-                .toString(StringType.UTF8); // URL name
+            instance.urlString = boxData.subarray(offset, instance.urlLength).toString(StringType.UTF8); // URL name
             offset += instance.urlLength; // Done with URL name
         }
 
@@ -1003,21 +1001,6 @@ export class IsoSampleEntry extends Mpeg4Box {
     }
 
     /**
-     * Constructs and initializes a new instance of @see IsoSampleEntry with a provided header and
-     * handler by reading the contents from a specified file.
-     * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
-     * @param file A @see File object to read the contents of the box from.
-     * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
-     */
-    public initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
-        Guards.notNullOrUndefined(file, "file");
-
-        this.initializeFromHeaderAndHandler(header, handler);
-        file.seek(super.dataPosition + 6);
-        this._dataReferenceIndex = file.readBlock(2).toUshort();
-    }
-
-    /**
      * Initializes a new instance of @see IsoSampleEntry with a provided header and
      * handler by reading the contents from a specified file.
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
@@ -1030,8 +1013,23 @@ export class IsoSampleEntry extends Mpeg4Box {
 
         const instance: IsoSampleEntry = new IsoSampleEntry();
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
-        
+
         return instance;
+    }
+
+    /**
+     * Constructs and initializes a new instance of @see IsoSampleEntry with a provided header and
+     * handler by reading the contents from a specified file.
+     * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
+     * @param file A @see File object to read the contents of the box from.
+     * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
+     */
+    public initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
+        Guards.notNullOrUndefined(file, "file");
+
+        this.initializeFromHeaderAndHandler(header, handler);
+        file.seek(super.dataPosition + 6);
+        this._dataReferenceIndex = file.readBlock(2).toUshort();
     }
 
     /**

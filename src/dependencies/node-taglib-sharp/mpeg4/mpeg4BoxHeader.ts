@@ -135,7 +135,7 @@ export default class Mpeg4BoxHeader {
             header._boxSize = data.subarray(offset, 8).toUint();
 
             // UUID has a special header with 16 extra bytes.
-            if (header.boxType === Mpeg4BoxType.Uuid) {
+            if (ByteVector.compare(header.boxType, Mpeg4BoxType.Uuid) === 0) {
                 if (data.length < 16 + offset) {
                     throw new Error("Not enough data in box header.");
                 }
@@ -184,7 +184,7 @@ export default class Mpeg4BoxHeader {
         header._boxSize = 8;
         header._headerSize = 8;
 
-        if (type !== Mpeg4BoxType.Uuid) {
+        if (ByteVector.compare(type, Mpeg4BoxType.Uuid) !== 0) {
             if (extendedType !== null && extendedType !== undefined) {
                 throw new Error("Extended type only permitted for 'uuid'.");
             }
