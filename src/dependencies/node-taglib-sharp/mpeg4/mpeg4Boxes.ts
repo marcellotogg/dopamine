@@ -1849,7 +1849,7 @@ export class TextBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super();
+        super(0);
     }
 
     /**
@@ -1879,7 +1879,7 @@ export class UnknownBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super();
+        super(0);
     }
 
     /**
@@ -1908,7 +1908,7 @@ export class UrlBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super();
+        super(0);
     }
 
     /**
