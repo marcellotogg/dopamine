@@ -50,7 +50,19 @@ export class Mpeg4Box {
     /**
      * Contains the position of the box data.
      */
-    private _dataPosition: number;
+    private _baseDataPosition: number;
+
+    /**
+     * Gets the offset (after box specific headers) for the position of the data contained in the current instance.
+     */
+    private _dataOffset: number;
+
+    /**
+     * Gets the position of the data contained in the current instance, after any box specific headers.
+     */
+    public get dataPosition(): number {
+        return this._baseDataPosition + this._dataOffset;
+    }
 
     /**
      * The handler box that applies to the current instance.
@@ -73,9 +85,10 @@ export class Mpeg4Box {
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance,
      * or undefined if no handler applies.
      */
-    protected initializeFromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox): void {
+    protected initializeFromHeaderAndHandler(header: Mpeg4BoxHeader, handler: IsoHandlerBox, dataOffset: number): void {
+        this._dataOffset = dataOffset;
         this._header = header;
-        this._dataPosition = header.position + header.headerSize;
+        this._baseDataPosition = header.position + header.headerSize;
         this._handler = handler;
     }
 
@@ -83,16 +96,16 @@ export class Mpeg4Box {
      * Initializes a new instance of @see Mpeg4Box with a specified header.
      * @param header A @see Mpeg4BoxHeader object describing the new instance.
      */
-    protected initializeFromHeader(header: Mpeg4BoxHeader): void {
-        return this.initializeFromHeaderAndHandler(header, undefined);
+    protected initializeFromHeader(header: Mpeg4BoxHeader, dataOffset: number): void {
+        return this.initializeFromHeaderAndHandler(header, undefined, dataOffset);
     }
 
     /**
      * Initializes a new instance of @see Mpeg4Box with a specified box type.
      * @param type A @see ByteVector object containing the box type to use for the new instance.
      */
-    protected initializeFromType(type: ByteVector): void {
-        return this.initializeFromHeader(Mpeg4BoxHeader.fromType(type));
+    protected initializeFromType(type: ByteVector, dataOffset: number): void {
+        return this.initializeFromHeader(Mpeg4BoxHeader.fromType(type), dataOffset);
     }
 
     /**
@@ -135,14 +148,7 @@ export class Mpeg4Box {
      * Gets the size of the data contained in the current instance, minus the size of any box specific headers.
      */
     protected get dataSize(): number {
-        return this._header.dataSize + this._dataPosition - this.dataPosition;
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return this._dataPosition;
+        return this._header.dataSize + this._baseDataPosition - this.dataPosition;
     }
 
     /**
@@ -393,13 +399,6 @@ export class Mpeg4Box {
  */
 export class FullBox extends Mpeg4Box {
     /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 4;
-    }
-
-    /**
      * Gets and sets the version number of the current instance.
      */
     public version: number;
@@ -423,12 +422,12 @@ export class FullBox extends Mpeg4Box {
      * @param file A @see File object to read the contents of the box from.
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
      */
-    protected initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
+    protected initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox, dataOffset: number): void {
         Guards.notNullOrUndefined(file, "file");
 
-        this.initializeFromHeaderAndHandler(header, handler);
+        this.initializeFromHeaderAndHandler(header, handler, dataOffset + 4);
 
-        file.seek(super.dataPosition);
+        file.seek(this.dataPosition);
         const headerData: ByteVector = file.readBlock(4);
 
         this.version = headerData.get(0);
@@ -440,8 +439,8 @@ export class FullBox extends Mpeg4Box {
      * @param header A @see Mpeg4BoxHeader object containing the header to use for the new instance.
      * @param version A value containing the version of the new instance.
      */
-    protected initializeFromHeaderVersionAndFlags(header: Mpeg4BoxHeader, version: number, flags: number): void {
-        this.initializeFromHeader(header);
+    protected initializeFromHeaderVersionAndFlags(header: Mpeg4BoxHeader, version: number, flags: number, dataOffset: number): void {
+        this.initializeFromHeader(header, dataOffset + 4);
 
         this.version = version;
         this.flags = flags;
@@ -454,8 +453,8 @@ export class FullBox extends Mpeg4Box {
      * @param flags A value containing the flags for the new instance.
      * @returns A new instance of @see FullBox.
      */
-    protected initializeFromTypeVersionAndFlags(type: ByteVector, version: number, flags: number): void {
-        return this.initializeFromHeaderVersionAndFlags(Mpeg4BoxHeader.fromType(type), version, flags);
+    protected initializeFromTypeVersionAndFlags(type: ByteVector, version: number, flags: number, dataOffset: number): void {
+        return this.initializeFromHeaderVersionAndFlags(Mpeg4BoxHeader.fromType(type), version, flags, dataOffset);
     }
 
     /**
@@ -499,7 +498,7 @@ export class AppleAdditionalInfoBox extends FullBox {
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): AppleAdditionalInfoBox {
         const instance: AppleAdditionalInfoBox = new AppleAdditionalInfoBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
         instance.data = file.readBlock(instance.dataSize > 0 ? instance.dataSize : 0);
 
         return instance;
@@ -514,7 +513,7 @@ export class AppleAdditionalInfoBox extends FullBox {
      */
     public static fromTypeVersionAndFlags(type: ByteVector, version: number, flags: number): AppleAdditionalInfoBox {
         const instance: AppleAdditionalInfoBox = new AppleAdditionalInfoBox();
-        instance.initializeFromTypeVersionAndFlags(type, version, flags);
+        instance.initializeFromTypeVersionAndFlags(type, version, flags, 0);
 
         return instance;
     }
@@ -555,7 +554,7 @@ export default class AppleAnnotationBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: AppleAnnotationBox = new AppleAnnotationBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.children = instance.loadChildren(file);
 
         return instance;
@@ -568,7 +567,7 @@ export default class AppleAnnotationBox extends Mpeg4Box {
      */
     public static fromType(type: ByteVector): AppleAnnotationBox {
         const instance: AppleAnnotationBox = new AppleAnnotationBox();
-        instance.initializeFromType(type);
+        instance.initializeFromType(type, 0);
         instance.children = [];
 
         return instance;
@@ -600,7 +599,7 @@ export class AppleDataBox extends FullBox {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: AppleDataBox = new AppleDataBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 4);
         instance.data = instance.loadData(file);
 
         return instance;
@@ -614,16 +613,9 @@ export class AppleDataBox extends FullBox {
      */
     public static fromDataAndFlags(data: ByteVector, flags: number): AppleDataBox {
         const instance: AppleDataBox = new AppleDataBox();
-        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags);
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags, 4);
 
         return instance;
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 4;
     }
 
     /**
@@ -759,7 +751,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
          */
 
         const instance: AppleElementaryStreamDescriptor = new AppleElementaryStreamDescriptor();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
         const boxData: ByteVector = file.readBlock(instance.dataSize);
         instance.decoderConfig = ByteVector.empty();
         const offset: NumberByReference = new NumberByReference(0);
@@ -969,7 +961,7 @@ export class AppleItemListBox extends Mpeg4Box {
 
         const instance: AppleItemListBox = new AppleItemListBox();
 
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.children = instance.loadChildren(file);
 
         return instance;
@@ -981,7 +973,7 @@ export class AppleItemListBox extends Mpeg4Box {
      */
     public static fromEmpty(): AppleItemListBox {
         const instance: AppleItemListBox = new AppleItemListBox();
-        instance.initializeFromType(ByteVector.fromString("ilst", StringType.UTF8));
+        instance.initializeFromType(ByteVector.fromString("ilst", StringType.UTF8), 0);
         instance.children = [];
 
         return instance;
@@ -1011,11 +1003,11 @@ export class IsoSampleEntry extends Mpeg4Box {
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
      * @returns A new instance of @see IsoSampleEntry
      */
-    public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoSampleEntry {
+    public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox, dataOffset: number): IsoSampleEntry {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoSampleEntry = new IsoSampleEntry();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, dataOffset);
 
         return instance;
     }
@@ -1027,20 +1019,12 @@ export class IsoSampleEntry extends Mpeg4Box {
      * @param file A @see File object to read the contents of the box from.
      * @param handler A @see IsoHandlerBox object containing the handler that applies to the new instance.
      */
-    public initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): void {
+    public initializeFromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox, dataOffset: number): void {
         Guards.notNullOrUndefined(file, "file");
 
-        this.initializeFromHeaderAndHandler(header, handler);
+        this.initializeFromHeaderAndHandler(header, handler, dataOffset + 8);
         file.seek(super.dataPosition + 6);
         this._dataReferenceIndex = file.readBlock(2).toUshort();
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     * @return A value containing the position of the data contained in the current instance.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 8;
     }
 
     /**
@@ -1093,7 +1077,7 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoAudioSampleEntry = new IsoAudioSampleEntry();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 20);
         const base: IsoSampleEntry = instance as IsoSampleEntry;
         file.seek(base.dataPosition + 8);
         instance.audioChannels = file.readBlock(2).toUshort();
@@ -1104,13 +1088,6 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
         instance.children = instance.loadChildren(file);
 
         return instance;
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 20;
     }
 
     /**
@@ -1182,7 +1159,7 @@ export class IsoChunkLargeOffsetBox extends FullBox {
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoChunkLargeOffsetBox {
         const instance: IsoChunkLargeOffsetBox = new IsoChunkLargeOffsetBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
 
         const boxData: ByteVector = file.readBlock(instance.dataSize);
 
@@ -1266,7 +1243,7 @@ export class IsoChunkOffsetBox extends FullBox {
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoChunkOffsetBox {
         const instance: IsoChunkOffsetBox = new IsoChunkOffsetBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
 
         const boxData: ByteVector = file.readBlock(instance.dataSize);
 
@@ -1351,7 +1328,7 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoFreeSpaceBox {
         const instance: IsoFreeSpaceBox = new IsoFreeSpaceBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.padding = instance.dataSize;
 
         return instance;
@@ -1364,7 +1341,7 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      */
     public static fromPadding(padding: number): IsoFreeSpaceBox {
         const instance: IsoFreeSpaceBox = new IsoFreeSpaceBox();
-        instance.initializeFromType(ByteVector.fromString("free", StringType.UTF8));
+        instance.initializeFromType(ByteVector.fromString("free", StringType.UTF8), 0);
         instance.paddingSize = instance.padding;
 
         return instance;
@@ -1428,7 +1405,7 @@ export class IsoHandlerBox extends FullBox {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoHandlerBox = new IsoHandlerBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
         file.seek(instance.dataPosition + 4);
         const boxData: ByteVector = file.readBlock(instance.dataSize - 4);
         instance.handlerType = boxData.subarray(0, 4);
@@ -1458,7 +1435,7 @@ export class IsoHandlerBox extends FullBox {
         }
 
         const instance: IsoHandlerBox = new IsoHandlerBox();
-        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("hdlr", StringType.UTF8), 0, 0);
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("hdlr", StringType.UTF8), 0, 0, 0);
         instance.handlerType = handlerType.subarray(0, 4);
         instance.name = name;
 
@@ -1498,7 +1475,7 @@ export class IsoMetaBox extends FullBox {
      */
     public static fromHeaderFileAndHandler(header: Mpeg4BoxHeader, file: File, handler: IsoHandlerBox): IsoMetaBox {
         const instance: IsoMetaBox = new IsoMetaBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
         instance.children = instance.loadChildren(file);
 
         return instance;
@@ -1518,7 +1495,7 @@ export class IsoMetaBox extends FullBox {
         }
 
         const instance: IsoMetaBox = new IsoMetaBox();
-        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("meta", StringType.UTF8), 0, 0);
+        instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("meta", StringType.UTF8), 0, 0, 0);
         instance.children = [];
         instance.addChild(IsoHandlerBox.fromHandlerTypeAndHandlerName(handlerType, handlerName));
 
@@ -1581,7 +1558,7 @@ export class IsoMovieHeaderBox extends FullBox {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoMovieHeaderBox = new IsoMovieHeaderBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 0);
 
         let bytesRemaining: number = instance.dataSize;
         let data: ByteVector;
@@ -1643,11 +1620,11 @@ export class IsoMovieHeaderBox extends FullBox {
         data = file.readBlock(Math.min(6, bytesRemaining));
 
         if (data.length >= 4) {
-            instance.rate = data.subarray(0, 4).toUint();
+            instance.rate = IsoMovieHeaderBox.calculateRate(data.subarray(0, 4).toUint());
         }
 
         if (data.length >= 6) {
-            instance.volume = data.subarray(4, 2).toUshort();
+            instance.volume = IsoMovieHeaderBox.calculateVolume(data.subarray(4, 2).toUshort());
         }
 
         file.seek(file.tell + 70);
@@ -1708,18 +1685,11 @@ export class IsoSampleDescriptionBox extends FullBox {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoSampleDescriptionBox = new IsoSampleDescriptionBox();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 4);
         instance.entryCount = file.readBlock(4).toUint();
         instance.children = instance.loadChildren(file);
 
         return instance;
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 4;
     }
 }
 
@@ -1748,7 +1718,7 @@ export class IsoSampleTableBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoSampleTableBox = new IsoSampleTableBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.children = instance.loadChildren(file);
 
         return instance;
@@ -1785,7 +1755,7 @@ export class IsoUserDataBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoUserDataBox = new IsoUserDataBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.children = instance.loadChildren(file);
 
         return instance;
@@ -1797,7 +1767,7 @@ export class IsoUserDataBox extends Mpeg4Box {
      */
     public static fromEmpty(): IsoUserDataBox {
         const instance: IsoUserDataBox = new IsoUserDataBox();
-        instance.initializeFromType(ByteVector.fromString("udta", StringType.UTF8));
+        instance.initializeFromType(ByteVector.fromString("udta", StringType.UTF8), 0);
         instance.children = [];
 
         return instance;
@@ -1832,20 +1802,13 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
         Guards.notNullOrUndefined(file, "file");
 
         const instance: IsoVisualSampleEntry = new IsoVisualSampleEntry();
-        instance.initializeFromHeaderFileAndHandler(header, file, handler);
+        instance.initializeFromHeaderFileAndHandler(header, file, handler, 62);
         const base: IsoSampleEntry = instance as IsoSampleEntry;
         file.seek(base.dataPosition + 16);
         instance.videoWidth = file.readBlock(2).toUshort();
         instance.videoHeight = file.readBlock(2).toUshort();
 
         return instance;
-    }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 62;
     }
 
     /**
@@ -1880,7 +1843,7 @@ export class TextBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super(0);
+        super();
     }
 
     /**
@@ -1895,7 +1858,7 @@ export class TextBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: TextBox = new TextBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
 
         instance.data = instance.loadData(file);
 
@@ -1910,7 +1873,7 @@ export class UnknownBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super(0);
+        super();
     }
 
     /**
@@ -1925,7 +1888,7 @@ export class UnknownBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: UnknownBox = new UnknownBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.data = file.readBlock(instance.dataSize > 0 ? instance.dataSize : 0);
 
         return instance;
@@ -1939,7 +1902,7 @@ export class UrlBox extends Mpeg4Box {
      * Private constructor to force construction via static functions.
      */
     private constructor() {
-        super(0);
+        super();
     }
 
     /**
@@ -1954,7 +1917,7 @@ export class UrlBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         const instance: UrlBox = new UrlBox();
-        instance.initializeFromHeaderAndHandler(header, handler);
+        instance.initializeFromHeaderAndHandler(header, handler, 0);
         instance.data = instance.loadData(file);
 
         return instance;
