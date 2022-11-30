@@ -824,7 +824,7 @@ export default class AppleTag extends Tag {
         const dataBoxes: AppleDataBox[] = [];
 
         /**
-         * Check each box to see if the match any of the provided types. 
+         * Check each box to see if the match any of the provided types.
          * If a match is found, loop through the children and add any data box.
          */
         for (const box of this._ilstBox.children) {
