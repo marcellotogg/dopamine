@@ -9,6 +9,11 @@ import Mpeg4BoxType from "./mpeg4BoxType";
  */
 export default class Mpeg4BoxHeader {
     /**
+     * An empty box header.
+     */
+    public static readonly empty: Mpeg4BoxHeader = Mpeg4BoxHeader.fromType(ByteVector.fromString("xxxx", StringType.UTF8));
+
+    /**
      * The type of box represented by the current instance.
      */
     private _boxType: ByteVector;
@@ -37,11 +42,6 @@ export default class Mpeg4BoxHeader {
      * Indicates that the header was read from a file.
      */
     private _fromDisk: boolean;
-
-    /**
-     * An empty box header.
-     */
-    public static readonly empty: Mpeg4BoxHeader = Mpeg4BoxHeader.fromType(ByteVector.fromString("xxxx", StringType.UTF8));
 
     /**
      * Gets and sets the box represented by the current instance as a means of temporary storage for internal uses.
