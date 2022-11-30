@@ -52,6 +52,12 @@ export class Mpeg4Box {
      */
     private _dataPosition: number;
 
+
+    public get dataPosition() : number {
+        return this._dataPosition;
+    }
+    
+
     /**
      * The handler box that applies to the current instance.
      */
@@ -65,7 +71,7 @@ export class Mpeg4Box {
     /**
      * Protected constructor to force construction via static functions.
      */
-    protected constructor() {}
+    protected constructor(public dataOffset: number) {}
 
     /**
      * Initializes a new instance of @see Mpeg4Box with a specified header and handler.
@@ -135,15 +141,9 @@ export class Mpeg4Box {
      * Gets the size of the data contained in the current instance, minus the size of any box specific headers.
      */
     protected get dataSize(): number {
-        return this._header.dataSize + this._dataPosition - this.dataPosition;
+        return this._header.dataSize * this.dataOffset;
     }
-
-    /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return this._dataPosition;
-    }
+    
 
     /**
      * Gets the header of the current instance.
@@ -300,7 +300,7 @@ export class Mpeg4Box {
 
         const children: Mpeg4Box[] = [];
 
-        let position: number = this.dataPosition;
+        let position: number = this._dataPosition + this.dataOffset;
         const end: number = position + this.dataSize;
 
         this._header.box = this;
@@ -335,7 +335,7 @@ export class Mpeg4Box {
     public loadData(file: File): ByteVector {
         Guards.notNullOrUndefined(file, "file");
 
-        file.seek(this.dataPosition);
+        file.seek(this._dataPosition + this.dataOffset);
 
         return file.readBlock(this.dataSize);
     }
@@ -393,13 +393,6 @@ export class Mpeg4Box {
  */
 export class FullBox extends Mpeg4Box {
     /**
-     * Gets the position of the data contained in the current instance, after any box specific headers.
-     */
-    public get dataPosition(): number {
-        return super.dataPosition + 4;
-    }
-
-    /**
      * Gets and sets the version number of the current instance.
      */
     public version: number;
@@ -412,8 +405,8 @@ export class FullBox extends Mpeg4Box {
     /**
      * Protected constructor to force construction via static functions.
      */
-    protected constructor() {
-        super();
+    protected constructor(dataOffset: number) {
+        super(dataOffset + 4);
     }
 
     /**
@@ -428,7 +421,7 @@ export class FullBox extends Mpeg4Box {
 
         this.initializeFromHeaderAndHandler(header, handler);
 
-        file.seek(super.dataPosition);
+        file.seek(this.dataPosition - 4);
         const headerData: ByteVector = file.readBlock(4);
 
         this.version = headerData.get(0);
@@ -485,7 +478,7 @@ export class AppleAdditionalInfoBox extends FullBox {
     /**
      * Private constructor to force construction via static functions.
      */
-    private constructor() {
+    private constructor(dataOsset) {
         super();
     }
 
