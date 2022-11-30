@@ -1,5 +1,3 @@
 export default class NumberByReference {
-    public value: number;
-
-    public constructor(defaultValue: number) {}
+    public constructor(public value: number) {}
 }

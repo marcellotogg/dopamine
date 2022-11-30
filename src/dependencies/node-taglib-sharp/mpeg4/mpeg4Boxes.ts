@@ -427,7 +427,7 @@ export class FullBox extends Mpeg4Box {
 
         this.initializeFromHeaderAndHandler(header, handler, dataOffset + 4);
 
-        file.seek(this.dataPosition);
+        file.seek(this.dataPosition - 4);
         const headerData: ByteVector = file.readBlock(4);
 
         this.version = headerData.get(0);
@@ -614,6 +614,7 @@ export class AppleDataBox extends FullBox {
     public static fromDataAndFlags(data: ByteVector, flags: number): AppleDataBox {
         const instance: AppleDataBox = new AppleDataBox();
         instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags, 4);
+        instance.data = data;
 
         return instance;
     }
@@ -1023,7 +1024,7 @@ export class IsoSampleEntry extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         this.initializeFromHeaderAndHandler(header, handler, dataOffset + 8);
-        file.seek(super.dataPosition + 6);
+        file.seek(this.dataPosition - 8 + 6);
         this._dataReferenceIndex = file.readBlock(2).toUshort();
     }
 
@@ -1078,11 +1079,10 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
 
         const instance: IsoAudioSampleEntry = new IsoAudioSampleEntry();
         instance.initializeFromHeaderFileAndHandler(header, file, handler, 20);
-        const base: IsoSampleEntry = instance as IsoSampleEntry;
-        file.seek(base.dataPosition + 8);
+        file.seek(instance.dataPosition - 20 + 8);
         instance.audioChannels = file.readBlock(2).toUshort();
         instance.audioSampleSize = file.readBlock(2).toUshort();
-        file.seek(base.dataPosition + 16);
+        file.seek(instance.dataPosition - 20 + 16);
         const sampleRate: number = file.readBlock(4).toUint();
         instance.audioSampleRate = IsoAudioSampleEntry.calculateAudioSampleRate(sampleRate);
         instance.children = instance.loadChildren(file);
@@ -1803,8 +1803,7 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
 
         const instance: IsoVisualSampleEntry = new IsoVisualSampleEntry();
         instance.initializeFromHeaderFileAndHandler(header, file, handler, 62);
-        const base: IsoSampleEntry = instance as IsoSampleEntry;
-        file.seek(base.dataPosition + 16);
+        file.seek(instance.dataPosition - 62 + 16);
         instance.videoWidth = file.readBlock(2).toUshort();
         instance.videoHeight = file.readBlock(2).toUshort();
 

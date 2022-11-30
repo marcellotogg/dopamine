@@ -110,7 +110,6 @@ export default class Mpeg4BoxHeader {
         header.box = undefined;
         header._fromDisk = true;
         header._position = position;
-
         file.seek(position);
 
         const data: ByteVector = file.readBlock(32);
@@ -132,7 +131,7 @@ export default class Mpeg4BoxHeader {
 
             header._headerSize += 8;
             offset += 8;
-            header._boxSize = data.subarray(offset, 8).toUint();
+            header._boxSize = Number(data.subarray(offset, 8).toUlong());
 
             // UUID has a special header with 16 extra bytes.
             if (ByteVector.compare(header.boxType, Mpeg4BoxType.Uuid) === 0) {
@@ -196,8 +195,8 @@ export default class Mpeg4BoxHeader {
         Guards.notNullOrUndefined(extendedType, "extendedType");
         Guards.equals(extendedType.length, 16, "extendedType.length");
 
-        header._boxSize = 16;
-        header._headerSize = 16;
+        header._boxSize = 24;
+        header._headerSize = 24;
 
         header._extendedType = extendedType;
 

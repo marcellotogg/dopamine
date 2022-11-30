@@ -834,9 +834,9 @@ export default class AppleTag extends Tag {
                 }
 
                 // TODO: hopefully this is correct. I hate yield return (see original code).
-                for (const data_box of box.children) {
-                    if (data_box instanceof AppleDataBox) {
-                        dataBoxes.push(data_box as AppleDataBox);
+                for (const dataBox of box.children) {
+                    if (dataBox instanceof AppleDataBox) {
+                        dataBoxes.push(dataBox as AppleDataBox);
                     }
                 }
             }
