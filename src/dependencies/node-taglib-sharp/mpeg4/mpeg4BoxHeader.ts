@@ -44,6 +44,11 @@ export default class Mpeg4BoxHeader {
     private _fromDisk: boolean;
 
     /**
+     * Private constructor to force construction via static functions.
+     */
+    private constructor() {}
+
+    /**
      * Gets and sets the box represented by the current instance as a means of temporary storage for internal uses.
      */
     public box: Mpeg4Box;

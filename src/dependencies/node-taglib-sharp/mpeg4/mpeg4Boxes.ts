@@ -43,6 +43,11 @@ import NumberByReference from "./numberByReference";
  */
 export class Mpeg4Box {
     /**
+     * Contains he data contained in the current instance.
+     */
+    private _data: ByteVector;
+
+    /**
      * Contains the box header.
      */
     private _header: Mpeg4BoxHeader;
@@ -126,9 +131,11 @@ export class Mpeg4Box {
      * Gets and sets the data contained in the current instance.
      */
     public get data(): ByteVector {
-        return undefined;
+        return this._data;
     }
-    public set data(v: ByteVector) {}
+    public set data(v: ByteVector) {
+        this._data = v;
+    }
 
     /**
      * Gets whether or not the current instance has children.
@@ -1397,7 +1404,7 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
     public static fromPadding(padding: number): IsoFreeSpaceBox {
         const instance: IsoFreeSpaceBox = new IsoFreeSpaceBox();
         instance.initializeFromType(ByteVector.fromString("free", StringType.UTF8), IsoFreeSpaceBox.dataOffset);
-        instance.paddingSize = instance.padding;
+        instance.paddingSize = padding;
 
         return instance;
     }
