@@ -871,30 +871,30 @@ export default class AppleTag extends Tag {
             // they're legit, and make sure that they match
             // what we want. Then loop through and add all
             // the data box children to our output.
-            const mean_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
-            const name_box: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
+            const meanBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Mean);
+            const nameBox: AppleAdditionalInfoBox = <AppleAdditionalInfoBox>box.getChild(Mpeg4BoxType.Name);
 
             if (
-                mean_box === null ||
-                mean_box === undefined ||
-                name_box === null ||
-                name_box === undefined ||
-                mean_box.text !== mean ||
-                name_box.text !== name
+                meanBox === null ||
+                meanBox === undefined ||
+                nameBox === null ||
+                nameBox === undefined ||
+                meanBox.text !== mean ||
+                nameBox.text !== name
             ) {
                 continue;
             }
 
             // TODO: hopefully this is correct. I hate yield return (see original code).
-            const data_boxes: AppleDataBox[] = [];
+            const dataBoxes: AppleDataBox[] = [];
 
-            for (const data_box of box.children) {
-                if (data_box instanceof AppleDataBox) {
-                    data_boxes.push(data_box as AppleDataBox);
+            for (const dataBox of box.children) {
+                if (dataBox instanceof AppleDataBox) {
+                    dataBoxes.push(dataBox as AppleDataBox);
                 }
             }
 
-            return data_boxes;
+            return dataBoxes;
         }
     }
 
@@ -1053,10 +1053,10 @@ export default class AppleTag extends Tag {
      * @returns Text string from data box
      */
     public getDashBox(meanstring: string, namestring: string): string {
-        const data_boxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
+        const dataBoxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
 
-        if (data_boxes !== null && data_boxes !== undefined) {
-            return data_boxes[0].text;
+        if (dataBoxes !== null && dataBoxes !== undefined) {
+            return dataBoxes[0].text;
         } else {
             return undefined;
         }
@@ -1069,16 +1069,16 @@ export default class AppleTag extends Tag {
      * @returns Text string from data box
      */
     public getDashBoxes(meanstring: string, namestring: string): string[] {
-        const data_boxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
+        const dataBoxes: AppleDataBox[] = this.getDashAtoms(meanstring, namestring);
 
-        if (data_boxes !== null && data_boxes !== undefined) {
-            const box_text: string[] = [];
+        if (dataBoxes !== null && dataBoxes !== undefined) {
+            const boxText: string[] = [];
 
-            for (const data_box of data_boxes) {
-                box_text.push(data_box.text);
+            for (const dataBox of dataBoxes) {
+                boxText.push(dataBox.text);
             }
 
-            return box_text;
+            return boxText;
         } else {
             return undefined;
         }
@@ -1097,9 +1097,9 @@ export default class AppleTag extends Tag {
 
         // If we did find a data_box and we have an empty datastring we should remove the entire dash box.
         if (dataBox !== null && dataBox !== undefined && !datastring) {
-            const dash_box: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
-            dash_box.clearChildren();
-            this._ilstBox.removeChildByBox(dash_box);
+            const dashBox: AppleAnnotationBox = this.getParentDashBox(meanstring, namestring);
+            dashBox.clearChildren();
+            this._ilstBox.removeChildByBox(dashBox);
 
             return;
         }
@@ -1110,14 +1110,14 @@ export default class AppleTag extends Tag {
             // Create the new boxes, should use 1 for text as a flag
             const ameanBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Mean, 0, 1);
             const anameBox: AppleAdditionalInfoBox = AppleAdditionalInfoBox.fromTypeVersionAndFlags(Mpeg4BoxType.Name, 0, 1);
-            const adata_box: AppleDataBox = AppleDataBox.fromDataAndFlags(Mpeg4BoxType.Data, 1);
+            const adataBox: AppleDataBox = AppleDataBox.fromDataAndFlags(Mpeg4BoxType.Data, 1);
             ameanBox.text = meanstring;
             anameBox.text = namestring;
-            adata_box.text = datastring;
+            adataBox.text = datastring;
             const wholeBox = AppleAnnotationBox.fromType(Mpeg4BoxType.DASH);
             wholeBox.addChild(ameanBox);
             wholeBox.addChild(anameBox);
-            wholeBox.addChild(adata_box);
+            wholeBox.addChild(adataBox);
             this._ilstBox.addChild(wholeBox);
         }
     }
