@@ -439,7 +439,7 @@ export class FullBox extends Mpeg4Box {
 
         this.initializeFromHeaderAndHandler(header, handler, dataOffset + FullBox.dataOffset);
 
-        file.seek(this.dataPosition - FullBox.dataOffset);
+        file.seek(this.dataPosition - (dataOffset + FullBox.dataOffset));
         const headerData: ByteVector = file.readBlock(4);
 
         this.version = headerData.get(0);
@@ -1066,7 +1066,7 @@ export class IsoSampleEntry extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         this.initializeFromHeaderAndHandler(header, handler, dataOffset + IsoSampleEntry.dataOffset);
-        file.seek(this.dataPosition - IsoSampleEntry.dataOffset + 6);
+        file.seek(this.dataPosition - (dataOffset + IsoSampleEntry.dataOffset) + 6);
         this._dataReferenceIndex = file.readBlock(2).toUshort();
     }
 
