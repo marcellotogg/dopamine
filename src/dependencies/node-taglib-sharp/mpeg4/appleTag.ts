@@ -83,11 +83,11 @@ export default class AppleTag extends Tag {
     /**
      * Gets and sets the title for the media described by the current instance.
      */
-    public get text(): string {
+    public get title(): string {
         const text: string[] = this.getText(Mpeg4BoxType.Nam);
         return text.length === 0 ? undefined : text[0];
     }
-    public set text(v: string) {
+    public set title(v: string) {
         this.setTextFromTypeAndText(Mpeg4BoxType.Nam, v);
     }
 
