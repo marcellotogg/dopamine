@@ -1,6 +1,7 @@
 import * as DateFormat from "dateformat";
 import { Genres } from "..";
 import { ByteVector, StringType } from "../byteVector";
+import { IPicture, Picture } from "../picture";
 import { Tag, TagTypes } from "../tag";
 import { Guards } from "../utils";
 import { AppleDataBoxFlagType } from "./appleDataBoxFlagType";
@@ -10,11 +11,10 @@ import AppleAnnotationBox, {
     AppleItemListBox,
     IsoMetaBox,
     IsoUserDataBox,
-    Mpeg4Box,
+    Mpeg4Box
 } from "./mpeg4Boxes";
 import Mpeg4BoxType from "./mpeg4BoxType";
 import Mpeg4Utils from "./mpeg4Utils";
-
 export default class AppleTag extends Tag {
     /**
      * Gets the size of the tag in bytes on disk as it was read from disk.
@@ -799,6 +799,44 @@ export default class AppleTag extends Tag {
     }
     public set remixedBy(v: string) {
         this.setDashBox("com.apple.iTunes", "REMIXEDBY", v);
+    }
+
+    /**
+     * Gets and sets a collection of pictures associated with the media represented by the current instance.
+     */
+    public get pictures(): IPicture[] {
+        const l: IPicture[] = [];
+
+        for (const box of this.dataBoxesFromTypeParams(Mpeg4BoxType.Covr)) {
+            const p: IPicture = Picture.fromData(box.data);
+            l.push(p);
+        }
+
+        return l;
+    }
+    public set pictures(v: IPicture[]) {
+        if (v === null || v.length === 0) {
+            this.clearData(Mpeg4BoxType.Covr);
+            return;
+        }
+
+        const boxes: AppleDataBox[] = new AppleDataBox[v.length]();
+
+        for (let i = 0; i < v.length; i++) {
+            let type: AppleDataBoxFlagType = AppleDataBoxFlagType.ContainsData;
+
+            if (v[i].mimeType === "image/jpeg") {
+                type = AppleDataBoxFlagType.ContainsJpegData;
+            } else if (v[i].mimeType === "image/png") {
+                type = AppleDataBoxFlagType.ContainsPngData;
+            } else if (v[i].mimeType === "image/x-windows-bmp") {
+                type = AppleDataBoxFlagType.ContainsBmpData;
+            }
+
+            boxes[i] = AppleDataBox.fromDataAndFlags(v[i].data, type);
+        }
+
+        this.setDataFromTypeAndBoxes(Mpeg4BoxType.Covr, boxes);
     }
 
     /**
