@@ -72,7 +72,7 @@ export default class Mpeg4BoxFactory {
                 return UnknownBox.fromHeaderFileAndHandler(header, file, handler);
             }
 
-            return IsoSampleEntry.fromHeaderFileAndHandler(header, file, handler, 0);
+            return IsoSampleEntry.fromHeaderFileAndHandler(header, file, handler);
         }
 
         // Standard items...

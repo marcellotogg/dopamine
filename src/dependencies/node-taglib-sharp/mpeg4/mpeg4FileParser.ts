@@ -96,7 +96,6 @@ export default class Mpeg4FileParser {
     public get audioSampleEntry(): IsoAudioSampleEntry {
         for (const box of this._stsdBoxes) {
             for (const sub of box.children) {
-                // TODO: is this correct? See original code?
                 if (sub instanceof IsoAudioSampleEntry) {
                     return sub;
                 }
@@ -112,7 +111,6 @@ export default class Mpeg4FileParser {
     public get visualSampleEntry(): IsoVisualSampleEntry {
         for (const box of this._stsdBoxes) {
             for (const sub of box.children) {
-                // TODO: is this correct? See original code?
                 if (sub instanceof IsoVisualSampleEntry) {
                     return sub;
                 }

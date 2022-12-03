@@ -91,8 +91,7 @@ export default class Mpeg4File extends File {
             this._tag.addTag(this._appleTag);
 
             // If we're not reading properties, we're done.
-            // TODO: was this check converted correctly?
-            if (readStyle === ReadStyle.Average) {
+            if ((readStyle & ReadStyle.Average) === 0) {
                 this.mode = FileAccessMode.Closed;
 
                 return;
@@ -112,8 +111,6 @@ export default class Mpeg4File extends File {
             // Read the properties.
             // TODO: is this usage of the Properties constructor correct?
             this._properties = new Properties(mvhd_box.durationInMilliseconds, [audio_sample_entry, visual_sample_entry]);
-
-            // TODO
         } finally {
             this.mode = FileAccessMode.Closed;
         }
@@ -170,7 +167,6 @@ export default class Mpeg4File extends File {
         }
 
         // multiple udta : pick out the shallowest node which has an ILst tag
-        // TODO: getChildRecursively should only return undefined and not null. Is this undefined check sufficient?
         const possibleUdtaBoxes: IsoUserDataBox[] = this.udtaBoxes
             .filter((box) => box.getChildRecursively(Mpeg4BoxType.Ilst) !== undefined)
             .sort((box1, box2) => (box1.parentTree.length < box2.parentTree.length ? -1 : 1));
