@@ -820,20 +820,20 @@ export default class AppleTag extends Tag {
             return;
         }
 
-        const boxes: AppleDataBox[] = new AppleDataBox[v.length]();
+        const boxes: AppleDataBox[] = [];
 
-        for (let i = 0; i < v.length; i++) {
+        for (const picture of v) {
             let type: AppleDataBoxFlagType = AppleDataBoxFlagType.ContainsData;
 
-            if (v[i].mimeType === "image/jpeg") {
+            if (picture.mimeType === "image/jpeg") {
                 type = AppleDataBoxFlagType.ContainsJpegData;
-            } else if (v[i].mimeType === "image/png") {
+            } else if (picture.mimeType === "image/png") {
                 type = AppleDataBoxFlagType.ContainsPngData;
-            } else if (v[i].mimeType === "image/x-windows-bmp") {
+            } else if (picture.mimeType === "image/x-windows-bmp") {
                 type = AppleDataBoxFlagType.ContainsBmpData;
             }
 
-            boxes[i] = AppleDataBox.fromDataAndFlags(v[i].data, type);
+            boxes.push(AppleDataBox.fromDataAndFlags(picture.data, type));
         }
 
         this.setDataFromTypeAndBoxes(Mpeg4BoxType.Covr, boxes);
