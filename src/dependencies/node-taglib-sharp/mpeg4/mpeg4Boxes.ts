@@ -398,6 +398,11 @@ export class Mpeg4Box {
         return output;
     }
 
+    /**
+     * Adds an offset to the data position
+     * @param offset The offset to add to the data position
+     * @returns The value of the data position before adding the offset
+     */
     public addOffsetToDataPosition(offset: number): number {
         const dataPositionBeforeOffset: number = this._dataPosition;
 
