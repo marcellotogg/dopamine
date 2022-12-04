@@ -39,7 +39,7 @@ import NumberByReference from "./numberByReference";
  */
 
 /**
- *  Provides a generic implementation of a ISO/IEC 14496-12 box.
+ * This class provides a generic implementation of a ISO/IEC 14496-12 box.
  */
 export class Mpeg4Box {
     /**
@@ -77,7 +77,7 @@ export class Mpeg4Box {
     /**
      * The children of the current instance.
      */
-    public children: Mpeg4Box[] = [];
+    public children: Mpeg4Box[];
 
     /**
      * Protected constructor to force construction via static functions.
@@ -660,7 +660,7 @@ export class AppleDataBox extends FullBox {
      * @returns
      */
     protected renderUsingTopData(topData: ByteVector): ByteVector {
-        const output: ByteVector = ByteVector.concatenate(ByteVector.fromInt(4), topData);
+        const output: ByteVector = ByteVector.concatenate(ByteVector.fromSize(4), topData);
 
         return super.renderUsingTopData(output);
     }
@@ -1005,6 +1005,9 @@ export class AppleItemListBox extends Mpeg4Box {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * This class extends @see Mpeg4Box to provide an implementation of a ISO/IEC 14496-12 SampleEntry.
+ */
 export class IsoSampleEntry extends Mpeg4Box {
     /**
      * The data reference index of the current instance.
@@ -1376,7 +1379,7 @@ export class IsoFreeSpaceBox extends Mpeg4Box {
      * @returns A @see ByteVector object containing the data contained in the current instance.
      */
     public get data(): ByteVector {
-        return ByteVector.fromInt(this.padding);
+        return ByteVector.fromSize(this.padding);
     }
     public set data(v: ByteVector) {
         this.padding = v !== null && v !== undefined ? v.length : 0;
@@ -1434,7 +1437,7 @@ export class IsoHandlerBox extends FullBox {
         const boxData: ByteVector = file.readBlock(instance.dataSize - 4);
         instance.handlerType = boxData.subarray(0, 4);
 
-        let end: number = boxData.find(ByteVector.fromInt(0), 16);
+        let end: number = boxData.offsetFind(ByteVector.fromByte(0), 16);
 
         if (end < 16) {
             end = boxData.length;
@@ -1471,10 +1474,11 @@ export class IsoHandlerBox extends FullBox {
      */
     public get data(): ByteVector {
         const output: ByteVector = ByteVector.concatenate(
+            ByteVector.fromSize(4),
             this.handlerType,
-            ByteVector.fromInt(12),
+            ByteVector.fromSize(12),
             ByteVector.fromString(this.name, StringType.UTF8),
-            ByteVector.fromInt(2)
+            ByteVector.fromSize(2)
         );
 
         return output;
@@ -1484,8 +1488,7 @@ export class IsoHandlerBox extends FullBox {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Constructs and initializes a new instance of @see IsoMetaBox with a provided header and
- * handler by reading the contents from a specified file.
+ * This class extends @see FullBox to provide an implementation of a ISO/IEC 14496-12 MetaBox.
  */
 export class IsoMetaBox extends FullBox {
     /**
@@ -1925,6 +1928,9 @@ export class UnknownBox extends Mpeg4Box {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Represent a MP4 URL box
+ */
 export class UrlBox extends Mpeg4Box {
     /**
      * Private constructor to force construction via static functions.

@@ -1,10 +1,19 @@
+import { ByteVector } from "../byteVector";
 import { File, FileAccessMode, ReadStyle } from "../file";
 import { IFileAbstraction } from "../fileAbstraction";
 import { Properties } from "../properties";
 import { Tag, TagTypes } from "../tag";
 import { NumberUtils } from "../utils";
 import AppleTag from "./appleTag";
-import { IsoAudioSampleEntry, IsoMovieHeaderBox, IsoUserDataBox, IsoVisualSampleEntry } from "./mpeg4Boxes";
+import {
+    IsoAudioSampleEntry,
+    IsoChunkLargeOffsetBox,
+    IsoChunkOffsetBox,
+    IsoMovieHeaderBox,
+    IsoUserDataBox,
+    IsoVisualSampleEntry,
+} from "./mpeg4Boxes";
+import Mpeg4BoxHeader from "./mpeg4BoxHeader";
 import Mpeg4BoxType from "./mpeg4BoxType";
 import Mpeg4FileParser from "./mpeg4FileParser";
 import Mpeg4Tag from "./mpeg4Tag";
@@ -51,6 +60,7 @@ export default class Mpeg4File extends File {
     }
 
     private read(readStyle: ReadStyle): void {
+        // TODO: Support Id3v2 boxes!!!
         this._tag = new Mpeg4Tag();
         this.mode = FileAccessMode.Read;
 
@@ -143,7 +153,91 @@ export default class Mpeg4File extends File {
 
     /** @inheritDoc */
     public save(): void {
-        // TODO
+        // Boilerplate
+        this.preSave();
+
+        if (this.udtaBoxes.length === 0) {
+            const udtaBox = IsoUserDataBox.fromEmpty();
+            this.udtaBoxes.push(udtaBox);
+        }
+
+        // Try to get into write mode.
+        this.mode = FileAccessMode.Write;
+
+        try {
+            const parser = new Mpeg4FileParser(this);
+            parser.parseBoxHeaders();
+
+            this._invariantStartPosition = parser.mdatStartPosition;
+            this._invariantEndPosition = parser.mdatEndPosition;
+
+            let sizeChange: number = 0;
+            let writePosition: number = 0;
+
+            // To avoid rewriting udta blocks which might not have been modified,
+            // the code here will work correctly if:
+            // 1. There is a single udta for the entire file
+            //   - OR -
+            // 2. There are multiple utdtas, but only 1 of them contains the Apple ILST box.
+            // We should be OK in the vast majority of cases
+
+            let udtaBox: IsoUserDataBox = this.findAppleTagUdta();
+
+            if (udtaBox === null || udtaBox === undefined) {
+                udtaBox = IsoUserDataBox.fromEmpty();
+            }
+
+            const tagData: ByteVector = udtaBox.render();
+
+            // If we don't have a "udta" box to overwrite...
+            if (udtaBox.parentTree === null || udtaBox.parentTree === undefined || udtaBox.parentTree.length === 0) {
+                // Stick the box at the end of the moov box.
+                const moovHeader: Mpeg4BoxHeader = parser.moovTree[parser.moovTree.length - 1];
+                sizeChange = tagData.length;
+                writePosition = moovHeader.position + moovHeader.totalBoxSize;
+                this.insert(tagData, writePosition, 0);
+
+                // Overwrite the parent box sizes.
+                for (let i = parser.moovTree.length - 1; i >= 0; i--) {
+                    sizeChange = parser.moovTree[i].overwrite(this, sizeChange);
+                }
+            } else {
+                // Overwrite the old box.
+                const udtaHeader: Mpeg4BoxHeader = udtaBox.parentTree[udtaBox.parentTree.length - 1];
+                sizeChange = tagData.length - udtaHeader.totalBoxSize;
+                writePosition = udtaHeader.position;
+                this.insert(tagData, writePosition, udtaHeader.totalBoxSize);
+
+                // Overwrite the parent box sizes.
+                for (let i = udtaBox.parentTree.length - 2; i >= 0; i--) {
+                    sizeChange = udtaBox.parentTree[i].overwrite(this, sizeChange);
+                }
+            }
+
+            // If we've had a size change, we may need to adjust chunk offsets.
+            if (sizeChange !== 0) {
+                // We may have moved the offset boxes, so we need to reread.
+                parser.parseChunkOffsets();
+                this._invariantStartPosition = parser.mdatStartPosition;
+                this._invariantEndPosition = parser.mdatEndPosition;
+
+                for (const box of parser.chunkOffsetBoxes) {
+                    if (box instanceof IsoChunkLargeOffsetBox) {
+                        box.overwrite(this, sizeChange, writePosition);
+                        continue;
+                    }
+
+                    if (box instanceof IsoChunkOffsetBox) {
+                        box.overwrite(this, sizeChange, writePosition);
+                        continue;
+                    }
+                }
+            }
+
+            this.tagTypesOnDisk = this.tagTypes;
+        } finally {
+            this.mode = FileAccessMode.Closed;
+        }
     }
 
     /**
@@ -166,7 +260,7 @@ export default class Mpeg4File extends File {
             return this.udtaBoxes[0]; // Single udta - just return it
         }
 
-        // multiple udta : pick out the shallowest node which has an ILst tag
+        // Multiple udta: pick out the shallowest node which has an ILst tag
         const possibleUdtaBoxes: IsoUserDataBox[] = this.udtaBoxes
             .filter((box) => box.getChildRecursively(Mpeg4BoxType.Ilst) !== undefined)
             .sort((box1, box2) => (box1.parentTree.length < box2.parentTree.length ? -1 : 1));

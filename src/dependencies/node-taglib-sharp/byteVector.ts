@@ -384,6 +384,20 @@ export class ByteVector {
     }
 
     /**
+     * Creates a 1 byte {@link ByteVector} with an 8-bit integer as the data
+     * @param value 8-bit integer to use as the data.
+     */
+    public static fromByte(value: number): ByteVector {
+        Guards.short(value, "value");
+
+        const bytes = new Uint8Array(1);
+        const dv = new DataView(bytes.buffer);
+        dv.setInt8(0, value);
+
+        return new ByteVector(bytes);
+    }
+
+    /**
      * Creates a {@link ByteVector} of a given length with a given value for all the elements
      * @param size Length of the ByteVector. Must be a positive safe integer
      * @param fill Byte value to initialize all elements to. Must be a positive 8-bit integer
