@@ -486,11 +486,7 @@ export class FullBox extends Mpeg4Box {
      * @returns A @see ByteVector object containing the rendered version of the current instance.
      */
     protected renderUsingTopData(topData: ByteVector): ByteVector {
-        const output: ByteVector = ByteVector.concatenate(
-            ByteVector.fromInt(this.version),
-            ByteVector.fromUint(this.flags).subarray(1, 3),
-            topData
-        );
+        const output: ByteVector = ByteVector.concatenate(this.version, ByteVector.fromUint(this.flags).subarray(1, 3), topData);
 
         return super.renderUsingTopData(output);
     }
