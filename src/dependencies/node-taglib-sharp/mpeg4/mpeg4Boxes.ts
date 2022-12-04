@@ -1,5 +1,6 @@
 import { ByteVector, StringType } from "../byteVector";
 import { File } from "../file";
+import NumberWrapper from "../numberWrapper";
 import { IAudioCodec, IVideoCodec, MediaTypes } from "../properties";
 import { Guards, StringUtils } from "../utils";
 import { AppleDataBoxFlagType } from "./appleDataBoxFlagType";
@@ -7,7 +8,6 @@ import { DescriptorTag } from "./descriptorTag";
 import Mpeg4BoxFactory from "./mpeg4BoxFactory";
 import Mpeg4BoxHeader from "./mpeg4BoxHeader";
 import Mpeg4BoxType from "./mpeg4BoxType";
-import NumberByReference from "./numberByReference";
 
 /**
  * This file contains all boxes. All boxes had to be grouped into a single file due to circular dependencies
@@ -399,16 +399,18 @@ export class Mpeg4Box {
     }
 
     /**
-     * Adds an offset to the data position
-     * @param offset The offset to add to the data position
-     * @returns The value of the data position before adding the offset
+     * Increases the data position by a given value. This function can be used by boxes
+     * which extend from @see Mpeg4Box to increase the data position, because the data
+     * is located after their box specific headers.
+     * @param value The value to add to the data position.
+     * @returns The value of the data position before the increase.
      */
-    public addOffsetToDataPosition(offset: number): number {
-        const dataPositionBeforeOffset: number = this._dataPosition;
+    public increaseDataPosition(value: number): number {
+        const dataPositionBeforeIncrease: number = this._dataPosition;
 
-        this._dataPosition += offset;
+        this._dataPosition += value;
 
-        return dataPositionBeforeOffset;
+        return dataPositionBeforeIncrease;
     }
 }
 
@@ -446,9 +448,9 @@ export class FullBox extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         this.initializeFromHeaderAndHandler(header, handler);
-        const dataPositionBeforeOffset: number = this.addOffsetToDataPosition(4);
+        const dataPositionBeforeIncrease: number = this.increaseDataPosition(4);
 
-        file.seek(dataPositionBeforeOffset);
+        file.seek(dataPositionBeforeIncrease);
         const headerData: ByteVector = file.readBlock(4);
 
         this.version = headerData.get(0);
@@ -462,7 +464,7 @@ export class FullBox extends Mpeg4Box {
      */
     protected initializeFromHeaderVersionAndFlags(header: Mpeg4BoxHeader, version: number, flags: number): void {
         this.initializeFromHeader(header);
-        this.addOffsetToDataPosition(4);
+        this.increaseDataPosition(4);
 
         this.version = version;
         this.flags = flags;
@@ -617,7 +619,7 @@ export class AppleDataBox extends FullBox {
 
         const instance: AppleDataBox = new AppleDataBox();
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
-        instance.addOffsetToDataPosition(4);
+        instance.increaseDataPosition(4);
         instance.data = instance.loadData(file);
 
         return instance;
@@ -632,7 +634,7 @@ export class AppleDataBox extends FullBox {
     public static fromDataAndFlags(data: ByteVector, flags: number): AppleDataBox {
         const instance: AppleDataBox = new AppleDataBox();
         instance.initializeFromTypeVersionAndFlags(ByteVector.fromString("data", StringType.UTF8), 0, flags);
-        instance.addOffsetToDataPosition(4);
+        instance.increaseDataPosition(4);
         instance.data = data;
 
         return instance;
@@ -773,7 +775,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
         const boxData: ByteVector = file.readBlock(instance.dataSize);
         instance.decoderConfig = ByteVector.empty();
-        const offset: NumberByReference = new NumberByReference(0);
+        const offset: NumberWrapper = new NumberWrapper(0);
 
         // Elementary Stream Descriptor Tag
         if (<DescriptorTag>boxData.get(offset.value++) !== DescriptorTag.ES_DescrTag) {
@@ -940,7 +942,7 @@ export class AppleElementaryStreamDescriptor extends FullBox {
      * position following the size data.
      * @returns A value containing the length that was read.
      */
-    public readLength(data: ByteVector, offset: NumberByReference): number {
+    public readLength(data: ByteVector, offset: NumberWrapper): number {
         let b: number = 0;
         const end: number = offset.value + 4;
         let length: number = 0;
@@ -1045,8 +1047,8 @@ export class IsoSampleEntry extends Mpeg4Box {
         Guards.notNullOrUndefined(file, "file");
 
         this.initializeFromHeaderAndHandler(header, handler);
-        const dataPositionBeforeOffset: number = this.addOffsetToDataPosition(8);
-        file.seek(dataPositionBeforeOffset + 6);
+        const dataPositionBeforeIncrease: number = this.increaseDataPosition(8);
+        file.seek(dataPositionBeforeIncrease + 6);
         this._dataReferenceIndex = file.readBlock(2).toUshort();
     }
 
@@ -1101,11 +1103,11 @@ export class IsoAudioSampleEntry extends IsoSampleEntry implements IAudioCodec {
 
         const instance: IsoAudioSampleEntry = new IsoAudioSampleEntry();
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
-        const dataPositionBeforeOffset: number = instance.addOffsetToDataPosition(20);
-        file.seek(dataPositionBeforeOffset + 8);
+        const dataPositionBeforeIncrease: number = instance.increaseDataPosition(20);
+        file.seek(dataPositionBeforeIncrease + 8);
         instance.audioChannels = file.readBlock(2).toUshort();
         instance.audioSampleSize = file.readBlock(2).toUshort();
-        file.seek(dataPositionBeforeOffset + 16);
+        file.seek(dataPositionBeforeIncrease + 16);
         const sampleRate: number = file.readBlock(4).toUint();
         instance.audioSampleRate = IsoAudioSampleEntry.calculateAudioSampleRate(sampleRate);
         instance.children = instance.loadChildren(file);
@@ -1707,7 +1709,7 @@ export class IsoSampleDescriptionBox extends FullBox {
 
         const instance: IsoSampleDescriptionBox = new IsoSampleDescriptionBox();
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
-        instance.addOffsetToDataPosition(4);
+        instance.increaseDataPosition(4);
         instance.entryCount = file.readBlock(4).toUint();
         instance.children = instance.loadChildren(file);
 
@@ -1753,11 +1755,6 @@ export class IsoSampleTableBox extends Mpeg4Box {
  * This class extends @see Mpeg4Box to provide an implementation of a ISO/IEC 14496-12 UserDataBox.
  */
 export class IsoUserDataBox extends Mpeg4Box {
-    /**
-     * The offset (after box specific headers) for the position of the data contained in this type of box.
-     */
-    public static dataOffset: number = 0;
-
     /**
      *  Gets the box headers for the current "udta" box and all parent boxes up to the top of the file.
      */
@@ -1830,8 +1827,8 @@ export class IsoVisualSampleEntry extends IsoSampleEntry implements IVideoCodec 
 
         const instance: IsoVisualSampleEntry = new IsoVisualSampleEntry();
         instance.initializeFromHeaderFileAndHandler(header, file, handler);
-        const dataPositionBeforeOffset: number = instance.addOffsetToDataPosition(62);
-        file.seek(dataPositionBeforeOffset + 16);
+        const dataPositionBeforeIncrease: number = instance.increaseDataPosition(62);
+        file.seek(dataPositionBeforeIncrease + 16);
         instance.videoWidth = file.readBlock(2).toUshort();
         instance.videoHeight = file.readBlock(2).toUshort();
 

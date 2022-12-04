@@ -127,7 +127,7 @@ export default class Mpeg4File extends File {
     }
 
     /** @inheritDoc */
-    public get tag(): Tag {
+    public get tag(): Mpeg4Tag {
         return this._tag;
     }
 
@@ -142,13 +142,33 @@ export default class Mpeg4File extends File {
 
     /** @inheritDoc */
     public getTag(types: TagTypes, create: boolean): Tag {
-        // TODO
+        if (types === TagTypes.Apple) {
+            if ((this._appleTag === null || this._appleTag === undefined) && create) {
+                let udtaBox: IsoUserDataBox = this.findAppleTagUdta();
+
+                if (udtaBox === null || udtaBox === undefined) {
+                    udtaBox = IsoUserDataBox.fromEmpty();
+                }
+
+                this._appleTag = new AppleTag(udtaBox);
+                this.tag.setTags(this._appleTag);
+            }
+
+            return this._appleTag;
+        }
+
         return undefined;
     }
 
     /** @inheritDoc */
     public removeTags(types: TagTypes): void {
-        // TODO
+        if ((types & TagTypes.Apple) !== TagTypes.Apple || this._appleTag === null || this._appleTag === undefined) {
+            return;
+        }
+
+        this._appleTag.detachIlst();
+        this._appleTag = undefined;
+        this.tag.setTags();
     }
 
     /** @inheritDoc */
@@ -293,4 +313,6 @@ export default class Mpeg4File extends File {
 
 // /////////////////////////////////////////////////////////////////////////
 // Register the file type
-["taglib/m4a"].forEach((mt) => File.addFileType(mt, Mpeg4File));
+["taglib/m4a", "taglib/m4b", "taglib/m4v", "taglib/m4p", "taglib/mp4", "audio/mp4", "audio/x-m4a", "video/mp4", "video/x-m4v"].forEach(
+    (mt) => File.addFileType(mt, Mpeg4File)
+);

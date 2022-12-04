@@ -17,4 +17,14 @@ export default class Mpeg4Tag extends CombinedTag {
     public addTag(tag: Tag): void {
         super.addTag(tag);
     }
+
+    public setTags(...tags: Tag[]): void {
+        this.clear();
+
+        if (tags !== null && tags !== undefined && tags.length > 0) {
+            for (const tag of tags) {
+                this.addTag(tag);
+            }
+        }
+    }
 }
